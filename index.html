@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ajeet's UPSC Desk — a 3D study room</title>
+<meta name="description" content="An interactive 3D desk of a UPSC aspirant. Open books, run the laptop, flip the lamp, toss the water bottle. Day, golden hour and 2 AM revision mode.">
+<meta name="theme-color" content="#14182b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314182b'/%3E%3Cpath d='M20 50 L28 30 h8 l8 20z' fill='%23ffd479'/%3E%3Ccircle cx='32' cy='22' r='9' fill='%23ffb347'/%3E%3Cpath d='M12 52h40' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+} }
+</script>
+</head>
+<body data-theme="day">
+<canvas id="scene" aria-label="Interactive 3D study desk"></canvas>
+
+<!-- NAVBAR -->
+<header class="nav">
+  <a class="brand" href="#" id="brand"><span class="brand-lamp">💡</span><span class="brand-t">Ajeet<span>'s Desk</span></span></a>
+  <nav class="nav-links">
+    <button data-go="desk" class="active"><i>🪑</i><span data-i18n="nav_desk">Desk</span></button>
+    <button data-go="laptop"><i>💻</i><span data-i18n="nav_laptop">Laptop</span></button>
+    <button data-go="books"><i>📚</i><span data-i18n="nav_books">Books</span></button>
+    <button data-go="pomo"><i>⏱️</i><span data-i18n="nav_pomo">Focus</span></button>
+    <button data-go="explore"><i>✦</i><span data-i18n="nav_explore">Explore</span></button>
+  </nav>
+  <div class="nav-right">
+    <div class="seg lang" id="langSeg" role="group" aria-label="Language">
+      <button data-lang="en">EN</button><button data-lang="hi">हि</button><button data-lang="hg">Hing</button>
+    </div>
+  </div>
+</header>
+
+<!-- BOTTOM DOCK: time of day + lamp + music -->
+<div class="dockbar">
+  <div class="seg tod" id="todSeg" role="group" aria-label="Time of day">
+    <button data-tod="morning">☀️ <span data-i18n="tod_morning">Morning</span></button>
+    <button data-tod="golden">🌇 <span data-i18n="tod_golden">Golden</span></button>
+    <button data-tod="night">🌙 <span data-i18n="tod_night">2 AM</span></button>
+  </div>
+  <button class="pill" id="lampBtn" title="Lamp">💡 <span data-i18n="lamp">Lamp</span></button>
+  <div class="pill music" id="music">
+    <button id="mPlay" aria-label="Play or pause music">▶</button>
+    <input id="mVol" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Volume">
+    <button id="mRain" aria-label="Rain sound" title="Rain">🌧</button>
+  </div>
+  <button class="pill" id="resetBtn" title="Reset">↺ <span data-i18n="reset">Reset</span></button>
+</div>
+<div class="hint" id="hint" data-i18n="hint">Drag &amp; toss anything · Click the laptop, books, lamp &amp; window</div>
+<div class="toast" id="toast"></div>
+
+<!-- INTRO -->
+<div class="intro" id="intro">
+  <div class="intro-card">
+    <div class="intro-emoji">📖💡💻</div>
+    <h1 data-i18n="intro_t">Step into my study room</h1>
+    <p data-i18n="intro_s">A 3D desk of a UPSC aspirant. Touch everything.</p>
+    <button class="cta" id="enter"><span data-i18n="intro_btn">Enter</span> →</button>
+    <small data-i18n="intro_note">Sound on for the full experience 🔊</small>
+  </div>
+</div>
+
+<!-- EXPLORE -->
+<aside class="drawer" id="explore" aria-hidden="true">
+  <div class="drawer-h"><h2 data-i18n="ex_title">Explore the desk</h2><button class="x" data-close="explore">✕</button></div>
+  <p class="drawer-s" data-i18n="ex_sub">Everything on this site you can touch, try or break.</p>
+  <div class="cards" id="cards"></div>
+</aside>
+
+<!-- BOOK MODAL -->
+<div class="modal" id="book" aria-hidden="true">
+  <div class="book-wrap">
+    <button class="x" data-close="book">✕</button>
+    <div id="shelf" class="shelf"></div>
+    <div id="reader" class="reader">
+      <div class="spine-label" id="bTitle"></div>
+      <div class="paper"><h3 id="bHead"></h3><ul id="bList"></ul><div class="pgno" id="bPg"></div></div>
+      <div class="pager"><button id="bPrev">◀</button><button id="bShelf" data-i18n="shelf">Shelf</button><button id="bNext">▶</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- POMODORO -->
+<div class="modal" id="pomo" aria-hidden="true">
+  <div class="pomo-card">
+    <button class="x" data-close="pomo">✕</button>
+    <h3 data-i18n="pomo_t">Revision Timer</h3>
+    <div class="pomo-modes"><button data-pm="25" class="active" data-i18n="pomo_focus">Focus 25</button><button data-pm="5" data-i18n="pomo_break">Break 5</button><button data-pm="50" data-i18n="pomo_deep">Deep 50</button></div>
+    <div class="pomo-time" id="pomoTime">25:00</div>
+    <div class="pomo-btns"><button id="pomoGo" class="cta" data-i18n="start">Start</button><button id="pomoReset" data-i18n="reset">Reset</button></div>
+    <p class="pomo-q" id="pomoQ"></p>
+  </div>
+</div>
+
+<!-- LAPTOP OS -->
+<div class="os" id="os" aria-hidden="true">
+  <div class="os-laptop">
+    <div class="os-bar"><span class="os-logo">◆ AjeetOS</span><span class="os-clock" id="osClock"></span><button id="osClose">✕ <span data-i18n="back">Back to desk</span></button></div>
+    <div class="os-body">
+      <section class="app" id="app-chrome">
+        <div class="chrome-tabs"><div class="ctab"><i>🌐</i> <span data-i18n="os_newtab">New tab</span></div><span class="plus">+</span></div>
+        <form class="chrome-bar" id="qForm">
+          <button type="button" class="cbtn" id="qHome" title="Home">⌂</button>
+          <input id="q" type="text" autocomplete="off" spellcheck="false" data-i18n-ph="os_ph" placeholder="Search anything…">
+          <button class="cbtn go" type="submit">🔍</button>
+        </form>
+        <div class="chrome-view" id="qView"></div>
+      </section>
+      <section class="app" id="app-notes">
+        <h3 data-i18n="os_notes">Notes</h3>
+        <textarea id="notesTa" data-i18n-ph="os_notes_ph" placeholder="Type your revision notes here… (saved in your browser)"></textarea>
+      </section>
+      <section class="app" id="app-syll">
+        <h3 data-i18n="os_syll">Syllabus tracker</h3>
+        <div class="prog"><div id="progBar"></div></div><div class="prog-t" id="progT"></div>
+        <div id="syllList" class="syll"></div>
+      </section>
+    </div>
+    <div class="os-dock">
+      <button data-app="chrome" class="active"><i>🌐</i><span data-i18n="os_chrome">Chrome</span></button>
+      <button data-app="notes"><i>📝</i><span data-i18n="os_notes">Notes</span></button>
+      <button data-app="syll"><i>✅</i><span data-i18n="os_syll">Syllabus</span></button>
+    </div>
+  </div>
+</div>
+
+<noscript>This site needs JavaScript and WebGL.</noscript>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
