@@ -118,7 +118,7 @@ const skirting = mesh(new THREE.BoxGeometry(60, 0.5, 0.12), std('#efe7d8'), 0, -
 const shells = [];
 { // the rest of the room, for first-person view
   const shell = (w, h, x, y, z, ry, rx, color) => { const m = mesh(new THREE.PlaneGeometry(w, h), std(color, { roughness: 0.95 }), x, y, z); m.rotation.y = ry; m.rotation.x = rx; m.castShadow = false; scene.add(m); shells.push([m, color]); };
-  shell(40, 30, 0, -3.9, 0, 0, -Math.PI / 2, '#3a2b22'); shell(40, 30, 0, 12, 0, 0, Math.PI / 2, '#e9e1d2');
+  shell(40, 30, 0, -3.9, 0, 0, -Math.PI / 2, '#3a2b22'); shell(40, 30, 0, 6.0, 0, 0, Math.PI / 2, '#e9e1d2');
   shell(30, 22, -9, 5, 0, Math.PI / 2, 0, '#d3c7b2'); shell(30, 22, 9, 5, 0, -Math.PI / 2, 0, '#d3c7b2'); shell(40, 22, 0, 5, 13, Math.PI, 0, '#cfc3ae');
   const shelf = new THREE.Group(); shelf.position.set(-8.55, 0, 3.5);
   shelf.add(mesh(new THREE.BoxGeometry(0.5, 6.2, 4.6), std('#5a3b22'), 0, 2.5, 0));
@@ -130,6 +130,8 @@ const shells = [];
 /* ---------- window: live sky, opening sashes, curtains ---------- */
 const sky = canvasTex(512, 400);
 let winOpen = false, winK = 0, skySince = 0, wave = 0, curtainDrag = null;
+let weather = 'auto', flash = 0, bolt = null, boltT = 5, fanLvl = 0, fanK = 0, fanAngle = 0;
+const wx = { fog: 0, rain: 0, oc: 0 };
 const fw = [], flock = Array.from({ length: 5 }, () => ({ x: Math.random(), y: rand(0.12, 0.45), v: rand(0.03, 0.07), p: rand(0, 6) }));
 function burst(x, y) { const n = 28; fw.push({ x, y, age: 0, hue: rand(0, 360), parts: Array.from({ length: n }, (_, i) => ({ a: i / n * 6.283 + rand(-0.1, 0.1), s: rand(40, 95) })) }); A.sfx('pop', 0.7); }
 const skyMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 2.2), new THREE.MeshBasicMaterial({ map: sky.tex, toneMapped: false }));
@@ -154,6 +156,33 @@ function makeSash(side) {
   hinge.add(sg); return hinge;
 }
 const sashL = makeSash(-1), sashR = makeSash(1); win.add(sashL, sashR);
+// raindrops that cling to the glass and slide down, leaving trails
+const dropC = canvasTex(256, 200), drops = [];
+const dropMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.0), new THREE.MeshBasicMaterial({ map: dropC.tex, transparent: true, depthWrite: false, opacity: 0 }));
+dropMesh.position.set(-2.7, 3.5, -2.2 + 0.15); dropMesh.visible = false; scene.add(dropMesh);
+function updateDrops(dt) {
+  const op = clamp(wx.rain * 1.6, 0, 1) * (1 - winK); dropMesh.material.opacity = op; dropMesh.visible = op > 0.01;
+  if (!dropMesh.visible && !drops.length) return;
+  const g = dropC.g, w = 256, h = 200;
+  g.clearRect(0, 0, w, h);
+  if (Math.random() < wx.rain * dt * 14 && drops.length < 60) drops.push({ x: rand(8, w - 8), y: rand(0, h * 0.7), r: rand(0.7, 1.4), vy: 0, grow: rand(0.35, 0.9), trail: [] });
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const d = drops[i];
+    if (!d.vy) { d.r += d.grow * dt * Math.max(wx.rain, 0.2); if (d.r > 2.3) d.vy = rand(25, 70); }
+    else { d.trail.push([d.x, d.y]); if (d.trail.length > 26) d.trail.shift(); d.y += d.vy * dt; d.vy *= 1 + dt * 0.5; d.x += Math.sin(d.y * 0.2) * 0.12; }
+    if (d.trail.length > 1) { g.lineCap = 'round'; for (let t = 1; t < d.trail.length; t++) { g.strokeStyle = `rgba(200,222,250,${0.16 * t / d.trail.length})`; g.lineWidth = d.r * 0.55 * (t / d.trail.length) + 0.3; g.beginPath(); g.moveTo(d.trail[t - 1][0], d.trail[t - 1][1]); g.lineTo(d.trail[t][0], d.trail[t][1]); g.stroke(); } }
+    g.fillStyle = 'rgba(200,222,250,0.38)'; g.beginPath(); g.arc(d.x, d.y, d.r, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.7)'; g.beginPath(); g.arc(d.x - d.r * 0.3, d.y - d.r * 0.3, d.r * 0.3, 0, 7); g.fill();
+    if (d.y > h + 6 || (wx.rain < 0.03 && Math.random() < 0.05)) drops.splice(i, 1);
+  }
+  dropC.tex.needsUpdate = true;
+}
+function strike() {
+  const pts = []; let x = rand(60, 450), y = 0; while (y < 260) { pts.push([x, y]); x += rand(-26, 26); y += rand(18, 38); }
+  bolt = { pts, t0: performance.now() };
+  flash = 1; setTimeout(() => { flash = 0.7; }, 90); setTimeout(() => { flash = 1; }, 170);
+  setTimeout(() => A.sfx('thunder', 1), rand(500, 2000));
+}
 win.add(mesh(new THREE.CylinderGeometry(0.025, 0.025, 4.4, 8), std('#b8963f', { metalness: 0.8, roughness: 0.3 }), 0, 1.4, 0.32)); win.children[win.children.length - 1].rotation.z = Math.PI / 2;
 const curtains = [-1, 1].map((sd, k) => {
   const geo = new THREE.PlaneGeometry(1.9, 2.6, 22, 14); geo.translate(-sd * 0.95, -1.3, 0);
@@ -166,7 +195,7 @@ function updateWindow(dt, time) {
   winK += ((winOpen ? 1 : 0) - winK) * (1 - Math.exp(-dt * 3.2));
   sashL.rotation.y = -winK * 1.35; sashR.rotation.y = winK * 1.35;
   wave = Math.min(2.2, wave) * Math.exp(-dt * 1.4);
-  const amp = 0.03 + winK * 0.2 + wave * 0.14;
+  const amp = 0.03 + winK * 0.2 + wave * 0.14 + fanK * 0.07;
   curtains.forEach(c => {
     c.open += (c.goal - c.open) * (1 - Math.exp(-dt * 4)); const m = c.root; m.scale.x = 1 - 0.8 * c.open;
     const pos = m.geometry.attributes.position, base = m.userData.base, pleat = 0.025 + 0.11 * c.open;
@@ -440,6 +469,85 @@ const boardCtl = setupBoard(boardTex, A);
 }
 staticBox(1.0, 0.75, 0.06, -3.4, 0.82, -2.02);
 
+/* ---------- ceiling fan ---------- */
+const fan = new THREE.Group(); fan.position.set(0.4, 6.0, 1.2);
+const fanRotor = new THREE.Group(); fanRotor.position.y = -0.72;
+{
+  const dark = std('#2b2d33', { metalness: 0.6, roughness: 0.4 }), blade = std('#6a4a2c', { roughness: 0.6 });
+  fan.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), dark, 0, -0.25, 0));
+  fan.add(mesh(new THREE.CylinderGeometry(0.22, 0.27, 0.28, 20), dark, 0, -0.62, 0));
+  fan.add(mesh(new THREE.SphereGeometry(0.2, 16, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#fff3d0', emissive: '#fff0c0', emissiveIntensity: 0.5 }), 0, -0.76, 0));
+  for (let i = 0; i < 4; i++) {
+    const arm = new THREE.Group(); arm.rotation.y = i * Math.PI / 2;
+    const bl = mesh(new THREE.BoxGeometry(1.3, 0.025, 0.32), blade, 0.9, 0, 0); bl.rotation.z = 0.1; arm.add(bl);
+    arm.add(mesh(new THREE.BoxGeometry(0.3, 0.04, 0.08), dark, 0.3, 0.01, 0)); fanRotor.add(arm);
+  }
+  fan.add(fanRotor);
+}
+addItem({ id: 'fan', root: fan, onClick: () => cycleFan() });
+function cycleFan() { fanLvl = (fanLvl + 1) % 3; A.init(); A.setFan(fanLvl); A.sfx('click'); toast(['Fan off', 'Fan: low', 'Fan: high'][fanLvl]); syncExtras(); }
+function lookAtFan() { closeModals(); closeDrawer(); mode = 'desk'; setFP(true, true); pitchG = 0.9; yawG = 0; if (fanLvl === 0) cycleFan(); toast('Look up: the ceiling fan is spinning'); }
+
+/* ---------- desk drawer with surprise items ---------- */
+const DR = { x: 2.5, zClosed: 1.625, slide: 1.05, k: 0, goal: 0, spawned: false, nudged: false };
+const drawer = new THREE.Group(); drawer.position.set(DR.x, 0, DR.zClosed);
+{
+  const front = std('#9a6a3a', { roughness: 0.55 }), felt = std('#3a2a20', { roughness: 0.95 }), inner = std('#7a4e2a', { roughness: 0.7 });
+  drawer.add(mesh(new THREE.BoxGeometry(1.8, 0.24, 0.05), front, 0, -0.15, 0.6));
+  drawer.add(mesh(new THREE.BoxGeometry(0.5, 0.05, 0.05), std('#d8b45a', { metalness: 0.85, roughness: 0.3 }), 0, -0.15, 0.65));
+  drawer.add(mesh(new THREE.BoxGeometry(1.7, 0.03, 1.15), felt, 0, -0.27, 0));
+  [-0.85, 0.85].forEach(x => drawer.add(mesh(new THREE.BoxGeometry(0.03, 0.2, 1.15), inner, x, -0.17, 0)));
+  drawer.add(mesh(new THREE.BoxGeometry(1.7, 0.2, 0.03), inner, 0, -0.17, -0.58));
+}
+addItem({ id: 'drawer', root: drawer, onClick: () => toggleDrawer() });
+const drawerBody = new CANNON.Body({ mass: 0, type: CANNON.Body.KINEMATIC, position: new CANNON.Vec3(DR.x, 0, DR.zClosed) });
+[[0.85, 0.015, 0.575, 0, -0.27, 0], [0.015, 0.1, 0.575, -0.85, -0.17, 0], [0.015, 0.1, 0.575, 0.85, -0.17, 0], [0.85, 0.1, 0.015, 0, -0.17, -0.58], [0.9, 0.12, 0.025, 0, -0.15, 0.6]]
+  .forEach(([hx, hy, hz, ox, oy, oz]) => drawerBody.addShape(new CANNON.Box(new CANNON.Vec3(hx, hy, hz)), new CANNON.Vec3(ox, oy, oz)));
+world.addBody(drawerBody);
+function dropItem(o) { world.removeBody(o.body); removeItem(o); }
+const NOTES = ['Discipline beats motivation.', 'One more answer today.', 'You are closer than yesterday.', 'Revise, then rest.', 'Small steps, every day.', 'Chai first. Then Polity.'];
+const SURP = [
+  { make: () => { const g = new THREE.Group(); g.add(mesh(new THREE.BoxGeometry(0.5, 0.08, 0.26), std('#4a2415'))); g.add(mesh(new THREE.BoxGeometry(0.42, 0.085, 0.22), std('#c0392b'))); g.add(mesh(new THREE.BoxGeometry(0.3, 0.09, 0.04), std('#f4c20d'))); return { g, shape: new CANNON.Box(new CANNON.Vec3(0.25, 0.04, 0.13)), mass: 0.15, sfx: 'paper', click: (o) => { A.sfx('paper', 0.7); dropItem(o); toast('🍫 Chocolate! Brain fuel +10'); } }; } },
+  { make: () => { const g = new THREE.Group(), y = std('#f4c20d', { roughness: 0.4 }); const b = mesh(new THREE.SphereGeometry(0.17, 14, 12), y); b.scale.set(1, 0.85, 1.2); g.add(b); g.add(mesh(new THREE.SphereGeometry(0.1, 12, 10), y, 0, 0.17, 0.12)); const bk = mesh(new THREE.BoxGeometry(0.1, 0.03, 0.08), std('#ff8a00'), 0, 0.16, 0.24); g.add(bk); return { g, shape: new CANNON.Sphere(0.19), mass: 0.12, sfx: 'plastic', click: (o) => { A.sfx('duck'); o.body.velocity.y = 2.5; toast('Quack! Explain it to the duck, then write it.'); } }; } },
+  { make: () => { const g = new THREE.Group(), au = std('#d8b45a', { metalness: 0.85, roughness: 0.3 }); const r = mesh(new THREE.TorusGeometry(0.07, 0.022, 8, 14), au, -0.14, 0, 0); r.rotation.x = Math.PI / 2; g.add(r); g.add(mesh(new THREE.BoxGeometry(0.26, 0.03, 0.03), au, 0.04, 0, 0)); g.add(mesh(new THREE.BoxGeometry(0.04, 0.03, 0.07), au, 0.15, 0, 0.03)); return { g, shape: new CANNON.Box(new CANNON.Vec3(0.2, 0.025, 0.08)), mass: 0.08, sfx: 'glass', click: () => { A.sfx('glass', 0.6); toast('A mystery key. It opens nothing. Yet.'); } }; } },
+  { make: () => { const g = new THREE.Group(), au = std('#e0b43a', { metalness: 0.9, roughness: 0.25 }); [0, 1, 2].forEach(i => g.add(mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.03, 18), au, 0, i * 0.032, 0))); return { g, shape: new CANNON.Cylinder(0.14, 0.14, 0.09, 12), mass: 0.1, sfx: 'glass', click: (o) => { A.sfx('glass', 0.5); o.body.velocity.y = 5; o.body.angularVelocity.set(rand(-8, 8), 0, rand(-8, 8)); toast(Math.random() < 0.5 ? 'Heads: revise Polity first.' : 'Tails: practise answer writing.'); } }; } },
+  { make: () => { const q = NOTES[(Math.random() * NOTES.length) | 0], tex = canvasTex(256, 160, (c, w, h) => { c.fillStyle = '#fff6d6'; c.fillRect(0, 0, w, h); c.fillStyle = '#c0392b'; c.fillRect(0, 0, w, 14); c.fillStyle = '#2b2418'; c.font = '24px "Segoe Print","Comic Sans MS",cursive'; c.textAlign = 'center'; const words = q.split(' '); let line = '', y = 62; words.forEach(wd => { if ((line + wd).length > 16) { c.fillText(line, w / 2, y); line = ''; y += 32; } line += wd + ' '; }); c.fillText(line, w / 2, y); }).tex; const g = new THREE.Group(), m = std('#fff6d6'); g.add(mesh(new THREE.BoxGeometry(0.7, 0.02, 0.44), [m, m, std('#ffffff', { map: tex }), m, m, m])); return { g, shape: new CANNON.Box(new CANNON.Vec3(0.35, 0.012, 0.22)), mass: 0.05, sfx: 'paper', click: () => { A.sfx('paper', 0.6); toast('📝 ' + q); } }; } },
+  { make: () => { const g = new THREE.Group(); g.add(mesh(new THREE.SphereGeometry(0.2, 18, 14), std('#e63946', { roughness: 0.5 }))); return { g, shape: new CANNON.Sphere(0.2), mass: 0.1, sfx: 'plastic', click: (o) => { A.sfx('plastic', 0.8); o.body.velocity.y = 7; toast('Boing! Squeeze away the stress.'); } }; } },
+  { make: () => { const g = new THREE.Group(); g.add(mesh(new THREE.BoxGeometry(0.4, 0.05, 0.14), std('#1b1d24', { roughness: 0.4 }))); g.add(mesh(new THREE.BoxGeometry(0.12, 0.052, 0.12), std('#c9ccd1', { metalness: 0.8 }), 0.22, 0, 0)); return { g, shape: new CANNON.Box(new CANNON.Vec3(0.26, 0.025, 0.07)), mass: 0.06, sfx: 'plastic', click: () => { A.sfx('click'); toast('USB drive: "UPSC_notes_FINAL_v7.pdf"'); } }; } }
+];
+function spawnSurprises() {
+  DR.spawned = true; const picks = SURP.map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, 3), zc = DR.zClosed + DR.slide;
+  picks.forEach((idx, i) => {
+    const d = SURP[idx].make(), body = dyn(d.shape, DR.x + (i - 1) * 0.55 + rand(-0.1, 0.1), -0.05, zc + rand(-0.2, 0.2), d.mass, rand(0, 6.28));
+    const o = addItem({ id: 'surprise', root: d.g, body, sfx: d.sfx, lift: 0.3, onClick: () => d.click(o) }); o.drawerItem = true;
+  });
+}
+function toggleDrawer() {
+  A.init(); A.sfx('drawer');
+  if (!DR.goal) { DR.goal = 1; DR.spawned = false; if (!fp && mode === 'desk' && pitchG > -0.3) { pitchG = -0.32; DR.nudged = true; } toast('Drawer open: take what you like'); }
+  else { items.slice().forEach(o => { if (o.drawerItem && o.body.position.z > 2.22 && o.body.position.y < 0.4) dropItem(o); }); DR.goal = 0; if (DR.nudged) { pitchG = 0; DR.nudged = false; } }
+}
+
+/* ---------- weather controls ---------- */
+const WX = [['auto', '🌦', 'Auto'], ['clear', '☀️', 'Clear'], ['rain', '🌧', 'Rain'], ['storm', '⛈', 'Storm'], ['fog', '🌫', 'Fog']];
+function setWeather(w, quiet) {
+  weather = w; boltT = 1.5; const e = WX.find(x => x[0] === w);
+  if (!quiet) { A.init(); A.setRain(w === 'rain' || w === 'storm'); toast('Weather: ' + e[2]); }
+  syncExtras();
+}
+function syncExtras() {
+  const e = WX.find(x => x[0] === weather); $('#wxBtn').textContent = e[1]; $('#wxBtn').title = 'Weather: ' + e[2]; $('#wxBtn').classList.toggle('on', weather !== 'auto');
+  document.querySelectorAll('#wxChips button').forEach(b => b.classList.toggle('on', b.dataset.w === weather));
+  document.querySelectorAll('#fanChips button').forEach(b => b.classList.toggle('on', +b.dataset.f === fanLvl));
+}
+function buildExtras() {
+  WX.forEach(([k, ic, name]) => { const b = document.createElement('button'); b.dataset.w = k; b.textContent = ic + ' ' + name; b.onclick = () => setWeather(k); $('#wxChips').append(b); });
+  ['Off', 'Low', 'High'].forEach((n, i) => { const b = document.createElement('button'); b.dataset.f = i; b.textContent = n; b.onclick = () => { fanLvl = i; A.init(); A.setFan(i); A.sfx('click'); syncExtras(); }; $('#fanChips').append(b); });
+  $('#drawerBtn').onclick = () => toggleDrawer();
+  $('#wxBtn').onclick = () => { const i = WX.findIndex(x => x[0] === weather); setWeather(WX[(i + 1) % WX.length][0]); };
+  syncExtras();
+}
+
 /* ---------- doors ---------- */
 const doors = [];
 function makeDoor(x, z, ry) {
@@ -462,7 +570,7 @@ makeDoor(-6.0, -2.2, 0);
 function toggleDoors() { const o = !doors[0].goal; doors.forEach(d => { d.goal = o ? 1 : 0; }); A.sfx('door'); toast(o ? 'Door open' : 'Door closed'); }
 
 /* ---------- roller chair ---------- */
-const chair = new THREE.Group(); chair.position.set(2.4, -3.9, 3.6); chair.rotation.y = -0.55;
+const chair = new THREE.Group(); chair.position.set(-2.4, -3.9, 3.8); chair.rotation.y = -0.55;
 const swivel = new THREE.Group(); let chairSpin = 0, chairVx = 0, chairVz = 0;
 {
   const dark = std('#1b1d24', { roughness: 0.5, metalness: 0.4 }), fab = std('#1f3a5f', { roughness: 0.9 }), fab2 = std('#2c4f80', { roughness: 0.9 });
@@ -480,6 +588,10 @@ const swivel = new THREE.Group(); let chairSpin = 0, chairVx = 0, chairVz = 0;
 addItem({ id: 'chair', root: chair, onClick: () => spinChair() });
 function spinChair() { chairSpin = (Math.random() < 0.5 ? -1 : 1) * rand(10, 16); chairVx = rand(-1.3, 1.3); chairVz = rand(-1.1, 1.1); A.sfx('whoosh'); A.sfx('click'); }
 function updateRoom(dt) {
+  fanK += ([0, 0.45, 1][fanLvl] - fanK) * (1 - Math.exp(-dt * 0.8)); fanAngle += fanK * 11 * dt; fanRotor.rotation.y = fanAngle;
+  DR.k += (DR.goal - DR.k) * (1 - Math.exp(-dt * 4.5));
+  const dz = DR.zClosed + DR.k * DR.slide; drawerBody.velocity.set(0, 0, clamp((dz - drawerBody.position.z) / Math.max(dt, 1 / 120), -12, 12)); drawer.position.z = drawerBody.position.z;
+  if (DR.goal && !DR.spawned && DR.k > 0.9) spawnSurprises();
   doors.forEach(d => { d.k += (d.goal - d.k) * (1 - Math.exp(-dt * 3)); d.hinge.rotation.y = -d.k * 1.5; });
   chairSpin *= Math.exp(-dt * 1.1); swivel.rotation.y += chairSpin * dt;
   chair.position.x = clamp(chair.position.x + chairVx * dt, -6.5, 6.5); chair.position.z = clamp(chair.position.z + chairVz * dt, 3.0, 11.5);
@@ -553,9 +665,24 @@ function drawSky(time) {
   if (cur.stars > 0.3) { g.fillStyle = `rgba(150,160,190,${0.35 * cur.stars})`; [[-8, -6, 7], [9, 5, 5], [-3, 11, 4]].forEach(([dx, dy, r]) => { g.beginPath(); g.arc(cx + dx, cy + dy, r, 0, 7); g.fill(); }); } // craters
   g.fillStyle = `rgba(255,255,255,${0.55 * (1 - cur.stars)})`;
   [[110, 90, 56], [330, 140, 44], [420, 70, 38]].forEach(([x, y, r]) => { const dx = (time * 3 + x) % (w + 160) - 80; g.beginPath(); g.ellipse(dx, y, r, r * 0.38, 0, 0, 7); g.ellipse(dx + r * 0.5, y - 8, r * 0.6, r * 0.3, 0, 0, 7); g.fill(); });
+  if (wx.oc > 0.02) { // overcast: grey veil + dark clouds
+    const gc = C('#7a8696').lerp(C('#0c0f1a'), cur.stars);
+    g.fillStyle = rgba(gc, wx.oc * 0.78); g.fillRect(0, 0, w, h);
+    g.fillStyle = rgba(gc.clone().multiplyScalar(0.55), wx.oc * 0.9);
+    [[60, 40, 120], [200, 70, 150], [350, 35, 130], [470, 80, 110], [130, 110, 90]].forEach(([x, y, r], i) => { const dx = (time * (4 + i) + x) % (w + 240) - 120; g.beginPath(); g.ellipse(dx, y, r, r * 0.32, 0, 0, 7); g.fill(); });
+  }
   g.fillStyle = hex(cur.sil); bld.forEach(b => g.fillRect(b.x, h - b.h, b.w, b.h));
   g.beginPath(); g.arc(60, h - 60, 56, 0, 7); g.fill(); g.fillRect(56, h - 60, 8, 60); // tree
   g.fillStyle = `rgba(255,214,120,${cur.lights})`; bld.forEach((b, bi) => { for (let y = h - b.h + 14; y < h - 10; y += 22) for (let x = b.x + 6; x < b.x + b.w - 8; x += 14) if (((x * 7 + y * 13 + bi) | 0) % 3 === 0) g.fillRect(x, y, 6, 9); });
+  if (wx.fog > 0.02) { // fog: a veil plus drifting mist bands
+    const fc = C('#e4e9ee').lerp(C('#4a5578'), cur.stars);
+    g.fillStyle = rgba(fc, 0.5 * wx.fog); g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 4; i++) {
+      const y = h * (0.42 + 0.13 * i) + Math.sin(time * 0.3 + i) * 8, gr = g.createLinearGradient(0, y - 42, 0, y + 42);
+      gr.addColorStop(0, rgba(fc, 0)); gr.addColorStop(0.5, rgba(fc, 0.8 * wx.fog)); gr.addColorStop(1, rgba(fc, 0));
+      g.fillStyle = gr; g.fillRect(((time * 7 * (i % 2 ? 1 : -1)) % 40) - 20, y - 42, w + 40, 84);
+    }
+  }
   for (let i = 0; i < 3; i++) { // street traffic
     const cx = ((time * (26 + i * 9) + i * 190) % (w + 80)) - 40, cy = h - 5, night = cur.lights > 0.4;
     g.fillStyle = night ? '#ffe9a0' : ['#c0392b', '#2e6fb0', '#f4c20d'][i]; g.fillRect(cx, cy, 14, 5);
@@ -565,10 +692,12 @@ function drawSky(time) {
     g.strokeStyle = hex(cur.sil); g.lineWidth = 2;
     flock.forEach(b => { const x = b.x * w, y = b.y * h + Math.sin(time * 1.6 + b.p) * 7, fl = Math.sin(time * 13 + b.p) * 5; g.beginPath(); g.moveTo(x - 9, y + fl * 0.6); g.quadraticCurveTo(x - 4, y - fl, x, y); g.quadraticCurveTo(x + 4, y - fl, x + 9, y + fl * 0.6); g.stroke(); });
   }
-  if (A.isRain()) { // rain follows the rain button
+  if (wx.rain > 0.03) { // rain (weather or the rain button)
     g.fillStyle = 'rgba(30,40,60,.28)'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(200,220,255,.55)'; g.lineWidth = 1.2;
-    for (let i = 0; i < 70; i++) { const rx = (i * 53 + time * 60) % (w + 40) - 20, ry = (i * 97 + time * 380) % h; g.beginPath(); g.moveTo(rx, ry); g.lineTo(rx - 4, ry + 14); g.stroke(); }
+    for (let i = 0, n = Math.round(110 * wx.rain); i < n; i++) { const rx = (i * 53 + time * 60) % (w + 40) - 20, ry = (i * 97 + time * 380) % h; g.beginPath(); g.moveTo(rx, ry); g.lineTo(rx - 4, ry + 14); g.stroke(); }
   }
+  if (bolt) { const age = (performance.now() - bolt.t0) / 380; if (age < 1) { g.strokeStyle = `rgba(255,255,255,${1 - age})`; g.lineWidth = 3; g.shadowColor = '#bcd4ff'; g.shadowBlur = 18; g.beginPath(); bolt.pts.forEach(([bx, by], i) => i ? g.lineTo(bx, by) : g.moveTo(bx, by)); g.stroke(); g.shadowBlur = 0; } else bolt = null; }
+  if (flash > 0.02) { g.fillStyle = `rgba(235,240,255,${Math.min(0.85, flash * 0.8)})`; g.fillRect(0, 0, w, h); }
   fw.forEach(f => f.parts.forEach(p => { g.fillStyle = `hsla(${f.hue + p.a * 20},95%,65%,${Math.max(0, 1 - f.age / 1.4)})`; g.beginPath(); g.arc(f.x + Math.cos(p.a) * p.s * f.age, f.y + Math.sin(p.a) * p.s * f.age + 50 * f.age * f.age, 2.4, 0, 7); g.fill(); }));
   sky.tex.needsUpdate = true;
 }
@@ -583,13 +712,21 @@ function toggleLamp() { setLamp(!lampOn); A.sfx('click'); toast(t(lampOn ? 't_la
 function envUpdate(dt, time) {
   if (dayRun) { hour += dt * 0.25; applyHour(); }
   stepTime(dt);
+  { // weather
+    const dawnFog = clamp(1 - Math.abs(hour - 6.3) / 2.4, 0, 1), rainy = weather === 'rain' || weather === 'storm' || A.isRain();
+    const fogT = weather === 'fog' ? 1 : weather === 'auto' ? dawnFog * 0.9 : 0, rainT = weather === 'storm' ? 1 : rainy ? 0.6 : 0;
+    const ocT = weather === 'storm' ? 0.8 : rainy ? 0.5 : fogT * 0.35, kw = 1 - Math.exp(-dt * 1.2);
+    wx.fog += (fogT - wx.fog) * kw; wx.rain += (rainT - wx.rain) * kw; wx.oc += (ocT - wx.oc) * kw;
+    if (weather === 'storm') { boltT -= dt; if (boltT <= 0) { strike(); boltT = rand(5, 14); } }
+    flash *= Math.exp(-dt * 6);
+  }
   flock.forEach(b => { b.x += b.v * dt; if (b.x > 1.1) { b.x = -0.1; b.y = rand(0.1, 0.45); } });
   for (let i = fw.length - 1; i >= 0; i--) { fw[i].age += dt; if (fw[i].age > 1.5) fw.splice(i, 1); }
-  skySince += dt; if (skySince > 0.04) { skySince = 0; drawSky(time); }
+  skySince += dt; if (skySince > 0.04) { updateDrops(skySince); skySince = 0; drawSky(time); }
   updateWindow(dt, time);
-  sun.color.copy(cur.sun); sun.intensity = cur.sunI; sun.position.copy(cur.sunPos);
-  hemi.color.copy(cur.hemiS); hemi.groundColor.copy(cur.hemiG); hemi.intensity = cur.hemiI;
-  renderer.toneMappingExposure = cur.exp;
+  sun.color.copy(cur.sun); sun.intensity = cur.sunI * (1 - 0.65 * wx.oc); sun.position.copy(cur.sunPos);
+  hemi.color.copy(cur.hemiS); hemi.groundColor.copy(cur.hemiG); hemi.intensity = cur.hemiI * (1 - 0.15 * wx.oc) + flash * 2.4;
+  renderer.toneMappingExposure = cur.exp + flash * 0.25;
   lampK += ((lampOn ? 1 : 0) - lampK) * (1 - Math.exp(-dt * 7));
   lampLight.intensity = lampK * lampBright * (30 + cur.lights * 150);
   lampLight.color.set('#ff9a45').lerp(C('#fff3dc'), lampWarm);
@@ -727,7 +864,8 @@ document.querySelectorAll('[data-pm]').forEach(b => b.onclick = () => { document
 /* ---------- desk actions ---------- */
 function resetDesk(quiet) {
   lampAimGoal.set(0.4, 0, -0.2); lampBright = 1; lampWarm = 0.35; sl.b.value = 1; sl.w.value = 0.35; syncAimUI();
-  items.forEach(o => { if (!o.body) return; o.body.position.copy(o.home.p); o.body.quaternion.copy(o.home.q); o.body.velocity.setZero(); o.body.angularVelocity.setZero(); });
+  DR.goal = 0; DR.nudged = false;
+  items.slice().forEach(o => { if (!o.body) return; if (o.drawerItem) { dropItem(o); return; } o.body.position.copy(o.home.p); o.body.quaternion.copy(o.home.q); o.body.velocity.setZero(); o.body.angularVelocity.setZero(); });
   if (!quiet) toast(t('t_reset'));
 }
 function quake() {
@@ -743,7 +881,7 @@ const EX = [
   ['⏱️', 5, () => openPomo()], ['🌧', 6, () => { A.init(); A.setMusic(true); A.setRain(true); syncMusicUI(); toast(t('t_rain')); }], ['🌋', 7, () => quake()], ['🧴', 8, () => tossBottle()],
   ['✅', 9, () => zoomLaptop('syll')], ['🖼️', 10, () => quote()], ['🧹', 12, () => resetDesk()],
   ['📱', 13, () => openPhoneUI()], ['📰', 14, () => openNewsUI()], ['🪟', 15, () => setWindow(!winOpen)], ['🐦', 16, () => { setTime('morning'); setWindow(true); }], ['👁', 17, () => setFP(!fp)], ['🖊️', 18, () => flickPens()],
-  ['🪟', 19, () => { curtains.forEach(c => { c.goal = c.goal > 0.5 ? 0 : 1; }); wave += 1.5; A.sfx('paper', 0.5); }], ['🪑', 20, () => spinChair()], ['🚪', 21, () => toggleDoors()], ['🌅', 22, () => { dayRun = !dayRun; toast(dayRun ? 'The day is running' : 'Day paused'); }], ['🔍', 23, () => zoomSet(zoomK * 1.4)], ['🖍️', 24, () => openBoardUI()], ['🎚️', 25, () => { closeModals(); $('#musicPop').classList.add('open'); mp.sync(); }], ['⚙️', 26, () => openSettings()]
+  ['🪟', 19, () => { curtains.forEach(c => { c.goal = c.goal > 0.5 ? 0 : 1; }); wave += 1.5; A.sfx('paper', 0.5); }], ['🪑', 20, () => spinChair()], ['🚪', 21, () => toggleDoors()], ['🌅', 22, () => { dayRun = !dayRun; toast(dayRun ? 'The day is running' : 'Day paused'); }], ['🔍', 23, () => zoomSet(zoomK * 1.4)], ['🖍️', 24, () => openBoardUI()], ['🎚️', 25, () => { closeModals(); $('#musicPop').classList.add('open'); mp.sync(); }], ['⚙️', 26, () => openSettings()], ['🌦️', 27, () => setWeather(weather === 'storm' ? 'auto' : 'storm')], ['🌀', 28, () => lookAtFan()], ['🗄️', 29, () => toggleDrawer()]
 ];
 function buildCards() {
   const box = $('#cards'); box.innerHTML = '';
@@ -855,7 +993,7 @@ function initAutoHide() {
 initAutoHide();
 
 /* ================= go ================= */
-apply(); initGadgets(); buildCards(); buildSettings(); applySettings(); setTime('golden', true); snapTime(); drawSky(0); drawClock();
+apply(); initGadgets(); buildCards(); buildSettings(); buildExtras(); applySettings(); setTime('golden', true); snapTime(); drawSky(0); drawClock();
 setGoal(); resize(); camPos.copy(goalPos); lookCur.copy(goalLook);
 for (let i = 0; i < 260; i++) world.step(1 / 60); // let the stacks settle
 items.forEach(o => { if (o.body) { o.home = { p: o.body.position.clone(), q: o.body.quaternion.clone() }; o.root.position.copy(o.body.position); o.root.quaternion.copy(o.body.quaternion); } });
@@ -865,7 +1003,10 @@ if (url.get('t') && TOD[url.get('t')]) { setTime(url.get('t'), true); snapTime()
 if (url.get('ax')) { lampAimGoal.set(+url.get('ax'), 0, +url.get('az') || 0); lampAim.copy(lampAimGoal); }
 if (url.get('skip')) { $('#intro').classList.add('gone'); }
 if (url.get('h')) { hour = +url.get('h'); applyHour(); snapTime(); drawSky(0); }
-if (url.get('win')) setWindow(true, true);
+if (url.get('wx')) setWeather(url.get('wx'), true);
+if (url.get('fan')) { fanLvl = +url.get('fan'); fanK = fanLvl ? 1 : 0; }
+if (url.get('drawer')) setTimeout(() => toggleDrawer(), 400);
+if (url.get('win') === '1') setWindow(true, true);
 if (url.get('fp')) setFP(true, true);
 if (url.get('open') === 'phone') setTimeout(() => openPhoneUI(), 300);
 if (url.get('open') === 'news') setTimeout(() => openNewsUI(), 300);
@@ -889,10 +1030,10 @@ function frame() {
     }
   }
   world.step(1 / 60, dt, 3);
-  for (const o of items) {
+  for (const o of items.slice()) {
     if (!o.body) continue;
     o.root.position.copy(o.body.position); o.root.quaternion.copy(o.body.quaternion);
-    if (o.body.position.y < -4 && o !== drag) { o.body.position.copy(o.home.p); o.body.position.y += 2; o.body.velocity.setZero(); o.body.angularVelocity.setZero(); }
+    if (o.body.position.y < -4 && o !== drag) { if (o.drawerItem) { dropItem(o); continue; } o.body.position.copy(o.home.p); o.body.position.y += 2; o.body.velocity.setZero(); o.body.angularVelocity.setZero(); }
   }
   updateLampAim(dt); envUpdate(dt, time); birds.update(dt, time); updateRoom(dt); mp.draw(); drawClock();
   const k = 1 - Math.exp(-dt * 3.2);
@@ -907,4 +1048,4 @@ function frame() {
   renderer.render(scene, camera);
 }
 frame();
-window.__desk = { applyHour, curtains, doors, setHour: (h) => { hour = h; applyHour(); }, pickAt: (x, y) => { setNdc({ clientX: x, clientY: y }); const h = pick(); return h && h.item.id; }, setWindow, setFP, birds, setTime, setLamp, openBook, zoomLaptop, quake, THREE, scene, camera };
+window.__desk = { setWeather, strike, toggleDrawer, cycleFan, items,  applyHour, curtains, doors, setHour: (h) => { hour = h; applyHour(); }, pickAt: (x, y) => { setNdc({ clientX: x, clientY: y }); const h = pick(); return h && h.item.id; }, setWindow, setFP, birds, setTime, setLamp, openBook, zoomLaptop, quake, THREE, scene, camera };

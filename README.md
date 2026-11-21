@@ -19,6 +19,14 @@
 |---|---|---|
 | ![Music](screenshots/music.png) | ![Settings](screenshots/settings.png) | ![Whiteboard](screenshots/whiteboard.png) |
 
+| 🌧 Rain on the glass | ⛈ Storm and lightning | 🌫 Dawn fog |
+|---|---|---|
+| ![Rain](screenshots/rain.png) | ![Storm](screenshots/storm.png) | ![Fog](screenshots/fog.png) |
+
+| 🌀 Ceiling fan | 🗄 Surprise drawer |
+|---|---|
+| ![Fan](screenshots/fan.png) | ![Drawer](screenshots/drawer.png) |
+
 | 👁 First-person view | 📱 Mobile |
 |---|---|
 | ![First person](screenshots/firstperson.png) | <img src="screenshots/mobile.png" width="220" alt="Mobile view"> |
@@ -35,6 +43,11 @@
 - **Newspaper** – "The Daily Aspirant": term of the day, answer-writing prompts, fact file, links to real news.
 - **Books** (Polity, History, Geography, Economy, Ethics) with revision notes. **Notebook** = Pomodoro timer.
 - **Real physics** (Three.js + cannon-es): toss the bottle, cup, Rubik's cube, paperweight, books, phone, paper. **Pens and a pencil** you can flick and spin. Every material makes its own sound.
+
+**Weather, fan and drawer**
+- **Weather** (the 🌦 button, or Settings): Auto, Clear, Rain, Storm, Fog. Rain drops cling to the window glass and slide down leaving trails, storms bring lightning flashes with delayed thunder, and **fog rolls in at dawn** by itself. Skies darken and the room light dims under cloud.
+- **Ceiling fan**: look up in first-person view. Click it for Off / Low / High. It spins, hums, and makes the curtains sway more.
+- **Desk drawer**: click the drawer in the desk front. It slides out with **3 random surprise items** (chocolate, rubber duck, mystery key, coins, a note card, stress ball, USB drive). Click them for a reaction, or drag them out onto the desk.
 
 **Whiteboard, music and settings**
 - **Whiteboard** (left of the desk): a hand-drawn UPSC roadmap with topics, doodles, sticky notes and paper clips. Click it to open a big view and **draw on it** with markers (colours, size, eraser, save as PNG). Your drawing is remembered.

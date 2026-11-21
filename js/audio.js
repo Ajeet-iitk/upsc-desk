@@ -1,5 +1,5 @@
 // All sound is generated live with WebAudio. No audio files needed.
-let ctx, master, musicG, sfxG, rainG, windG, cricketG, crackleG, noiseBuf, musicBus, padLP, analyser, echoWet;
+let fanG, fanLfo, ctx, master, musicG, sfxG, rainG, windG, cricketG, crackleG, noiseBuf, musicBus, padLP, analyser, echoWet;
 let timer = null, sleepT = null, sleepEnd = 0, chordIdx = 0, mood = 'golden', melIdx = 3;
 const st = { music: false, rain: false, rainLvl: 0.55, wind: 0, windowOpen: false, crickets: false, crackle: false,
   vol: 0.5, tempo: 1, echo: 0.45, warm: 0.5, style: 0, master: 0.9, muted: false };
@@ -55,6 +55,13 @@ export function init() {
   const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.12; lg.gain.value = 0.03;
   lfo.connect(lg); lg.connect(windG.gain); lfo.start();
   ws.connect(wb); wb.connect(windG); ws.start();
+
+  // ceiling fan hum
+  fanG = ctx.createGain(); fanG.gain.value = 0; fanG.connect(master);
+  const fs = ctx.createBufferSource(); fs.buffer = noiseBuf; fs.loop = true; fs.playbackRate.value = 0.5;
+  const fbp = ctx.createBiquadFilter(); fbp.type = 'bandpass'; fbp.frequency.value = 260; fbp.Q.value = 0.9;
+  fanLfo = ctx.createOscillator(); fanLfo.frequency.value = 3; const fl = ctx.createGain(); fl.gain.value = 0.02; fanLfo.connect(fl); fl.connect(fanG.gain); fanLfo.start();
+  fs.connect(fbp); fbp.connect(fanG); fs.start();
 
   // crickets: pulsing high tones
   [[4300, 17], [4700, 13], [5100, 21]].forEach(([f, r]) => {
@@ -144,6 +151,7 @@ export function setCrickets(on) { ensure(); st.crickets = on; if (ctx) cricketG.
 export function setCrackle(on) { ensure(); st.crackle = on; ping(); }
 export function setMaster(v) { st.master = v; if (ctx && !st.muted) master.gain.setTargetAtTime(v, now(), 0.1); }
 export function setMuted(m) { st.muted = m; if (ctx) master.gain.setTargetAtTime(m ? 0 : st.master, now(), 0.1); ping(); }
+export function setFan(l) { ensure(); if (ctx) { fanG.gain.setTargetAtTime([0, 0.035, 0.06][l], now(), 0.6); fanLfo.frequency.setTargetAtTime([0.5, 3, 6.5][l], now(), 0.5); } }
 export function setSleep(min) {
   clearTimeout(sleepT); sleepEnd = 0;
   if (min > 0) {
@@ -177,8 +185,8 @@ function burst(t0, dur, freq, type, gain, q, dest) {
   const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; if (q) f.Q.value = q;
   const g = ctx.createGain();
   g.gain.setValueAtTime(gain, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-  s.connect(f); f.connect(g); g.connect(dest || sfxG);
-  s.start(t0, Math.random() * 1.5, dur + 0.05);
+  s.loop = true; s.connect(f); f.connect(g); g.connect(dest || sfxG);
+  s.start(t0, Math.random() * 1.5); s.stop(t0 + dur + 0.05);
 }
 function tone(t0, f0, f1, dur, gain, type = 'sine') {
   const o = ctx.createOscillator(), g = ctx.createGain();
@@ -200,6 +208,9 @@ export function sfx(kind = 'wood', v = 0.5) {
     case 'ding':    tone(t0, 880, 880, 0.9, 0.22); tone(t0 + 0.12, 1320, 1320, 1.0, 0.18); break;
     case 'pop':     burst(t0, 0.25, 700, 'lowpass', v * 0.8); tone(t0, 380, 70, 0.3, v * 0.35); burst(t0 + 0.06, 0.4, 5000, 'highpass', v * 0.15); break;
     case 'door':    tone(t0, 160, 92, 0.7, 0.1, 'sawtooth'); burst(t0 + 0.62, 0.12, 260, 'lowpass', 0.5); break;
+    case 'thunder': burst(t0, 3.2, 160, 'lowpass', v * 1.3); burst(t0 + 0.5, 2.6, 110, 'lowpass', v * 0.8); tone(t0, 70, 26, 2.8, v * 0.55); burst(t0, 0.12, 2500, 'highpass', v * 0.25); break;
+    case 'duck':    tone(t0, 700, 1150, 0.12, 0.2, 'square'); tone(t0 + 0.15, 950, 600, 0.12, 0.15, 'square'); break;
+    case 'drawer':  burst(t0, 0.4, 600, 'bandpass', 0.25, 0.8); burst(t0 + 0.38, 0.1, 300, 'lowpass', 0.45); break;
     case 'whoosh':  burst(t0, 0.5, 900, 'bandpass', 0.35, 0.7); break;
     case 'marker':  burst(t0, 0.05, 3500, 'highpass', 0.12); break;
     default:        burst(t0, 0.14, 380, 'lowpass', v * 1.1); tone(t0, 120, 55, 0.14, v * 0.5);
