@@ -4,6 +4,8 @@ import * as A from './audio.js';
 import { t, apply, setLang, nextLang } from './i18n.js';
 import { BOOKS } from './books.js';
 import { createBirds } from './birds.js';
+import { drawArt, setupBoard } from './board.js';
+import { initMusicPanel } from './musicpanel.js';
 import { initGadgets, resetPhone, buildNews } from './gadgets.js';
 import { initOS, openOS, closeOS, isOpen as osOpen, showApp } from './os.js';
 
@@ -11,6 +13,9 @@ const $ = (s) => document.querySelector(s);
 const V3 = THREE.Vector3;
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const SET0 = { wall: '#d9cdb8', curtain: '#e9d9b8', desk: '#ffffff', floor: '#3a2b22', sheer: 0.95, autohide: true, low: false, master: 0.9 };
+const SET = { ...SET0 };
+try { Object.assign(SET, JSON.parse(localStorage.getItem('deskSettings') || '{}')); } catch (e) {}
 
 /* ================= renderer / scene ================= */
 const canvas = $('#scene');
@@ -110,8 +115,9 @@ scene.add(desk);
 const wall = mesh(new THREE.PlaneGeometry(60, 22), std('#d9cdb8', { roughness: 0.95 }), 0, 5, -2.25);
 wall.castShadow = false; scene.add(wall);
 const skirting = mesh(new THREE.BoxGeometry(60, 0.5, 0.12), std('#efe7d8'), 0, -0.05, -2.2); skirting.castShadow = false; scene.add(skirting);
+const shells = [];
 { // the rest of the room, for first-person view
-  const shell = (w, h, x, y, z, ry, rx, color) => { const m = mesh(new THREE.PlaneGeometry(w, h), std(color, { roughness: 0.95 }), x, y, z); m.rotation.y = ry; m.rotation.x = rx; m.castShadow = false; scene.add(m); };
+  const shell = (w, h, x, y, z, ry, rx, color) => { const m = mesh(new THREE.PlaneGeometry(w, h), std(color, { roughness: 0.95 }), x, y, z); m.rotation.y = ry; m.rotation.x = rx; m.castShadow = false; scene.add(m); shells.push([m, color]); };
   shell(40, 30, 0, -3.9, 0, 0, -Math.PI / 2, '#3a2b22'); shell(40, 30, 0, 12, 0, 0, Math.PI / 2, '#e9e1d2');
   shell(30, 22, -9, 5, 0, Math.PI / 2, 0, '#d3c7b2'); shell(30, 22, 9, 5, 0, -Math.PI / 2, 0, '#d3c7b2'); shell(40, 22, 0, 5, 13, Math.PI, 0, '#cfc3ae');
   const shelf = new THREE.Group(); shelf.position.set(-8.55, 0, 3.5);
@@ -420,6 +426,20 @@ drawPhone(); setInterval(drawPhone, 30000);
   addItem({ id: 'pen' + i, root: g, body, sfx: 'plastic', lift: 0.15, onClick: () => { A.sfx('click'); body.velocity.y += 3.2; body.angularVelocity.set(rand(-1, 1), rand(9, 15) * (Math.random() < 0.5 ? -1 : 1), rand(-1, 1)); } });
 });
 
+/* ---------- whiteboard (on the left) ---------- */
+const boardTex = canvasTex(1152, 810, drawArt);
+const boardCtl = setupBoard(boardTex, A);
+{
+  const g = new THREE.Group(); g.position.set(-3.4, 0.82, -2.02); g.rotation.x = -0.09;
+  const alu = std('#c9ced6', { metalness: 0.7, roughness: 0.35 });
+  g.add(mesh(new THREE.BoxGeometry(2.0, 1.45, 0.06), alu, 0, 0, 0));
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.335), new THREE.MeshStandardMaterial({ map: boardTex.tex, roughness: 0.3 })); face.position.z = 0.032; g.add(face);
+  g.add(mesh(new THREE.BoxGeometry(1.9, 0.05, 0.16), alu, 0, -0.75, 0.1));
+  [['#2563eb', -0.5], ['#dc2626', -0.3], ['#16a34a', -0.1]].forEach(([c, x]) => { const m = mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.24, 10), std(c), x, -0.71, 0.14); m.rotation.z = Math.PI / 2; g.add(m); });
+  addItem({ id: 'board', root: g, onClick: () => openBoardUI() });
+}
+staticBox(1.0, 0.75, 0.06, -3.4, 0.82, -2.02);
+
 /* ---------- doors ---------- */
 const doors = [];
 function makeDoor(x, z, ry) {
@@ -438,8 +458,8 @@ function makeDoor(x, z, ry) {
   addItem({ id: 'door', root: g, onClick: () => { d.goal = d.goal ? 0 : 1; A.sfx('door'); toast(d.goal ? 'Door open' : 'Door closed'); } });
   doors.push(d);
 }
-makeDoor(-6.0, -2.2, 0); makeDoor(3.2, 12.9, Math.PI);
-function toggleDoors() { const o = !doors[0].goal; doors.forEach(d => { d.goal = o ? 1 : 0; }); A.sfx('door'); toast(o ? 'Doors open' : 'Doors closed'); }
+makeDoor(-6.0, -2.2, 0);
+function toggleDoors() { const o = !doors[0].goal; doors.forEach(d => { d.goal = o ? 1 : 0; }); A.sfx('door'); toast(o ? 'Door open' : 'Door closed'); }
 
 /* ---------- roller chair ---------- */
 const chair = new THREE.Group(); chair.position.set(2.4, -3.9, 3.6); chair.rotation.y = -0.55;
@@ -654,7 +674,7 @@ canvas.addEventListener('pointerup', endPointer); canvas.addEventListener('point
 let toastT;
 function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2600); }
 function setActive(name) { document.querySelectorAll('.nav-links button').forEach(b => b.classList.toggle('active', b.dataset.go === name)); }
-function closeDrawer() { $('#explore').classList.remove('open'); $('#lampPop').classList.remove('open'); }
+function closeDrawer() { $('#explore').classList.remove('open'); $('#lampPop').classList.remove('open'); $('#musicPop').classList.remove('open'); }
 function closeModals() { document.body.classList.remove('dim'); document.querySelectorAll('.modal.open').forEach(m => { m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); }); }
 function showModal(id) { closeModals(); closeDrawer(); document.body.classList.add('dim'); const m = $('#' + id); m.classList.add('open'); m.setAttribute('aria-hidden', 'false'); }
 function setFP(on, quiet) { fp = on; yawG = pitchG = 0; zoomSet(1); setGoal(); $('#fpBtn').classList.toggle('on', on); if (!quiet) toast(t(on ? 'fp_on' : 'fp_off')); }
@@ -715,7 +735,7 @@ function quake() {
   A.sfx('wood', 1); toast(t('t_quake'));
 }
 function tossBottle() { const o = items.find(i => i.id === 'bottle'); o.body.velocity.set(rand(-7, 7), 10, rand(2, 6)); o.body.angularVelocity.set(rand(-6, 6), 0, rand(-6, 6)); A.sfx('plastic', 0.8); }
-function syncMusicUI() { $('#mPlay').textContent = A.isMusic() ? '❚❚' : '▶'; $('#mPlay').classList.toggle('on', A.isMusic()); $('#mRain').classList.toggle('on', A.isRain()); }
+function syncMusicUI() { mp.sync(); }
 
 /* ---------- explore drawer ---------- */
 const EX = [
@@ -723,7 +743,7 @@ const EX = [
   ['⏱️', 5, () => openPomo()], ['🌧', 6, () => { A.init(); A.setMusic(true); A.setRain(true); syncMusicUI(); toast(t('t_rain')); }], ['🌋', 7, () => quake()], ['🧴', 8, () => tossBottle()],
   ['✅', 9, () => zoomLaptop('syll')], ['🖼️', 10, () => quote()], ['🧹', 12, () => resetDesk()],
   ['📱', 13, () => openPhoneUI()], ['📰', 14, () => openNewsUI()], ['🪟', 15, () => setWindow(!winOpen)], ['🐦', 16, () => { setTime('morning'); setWindow(true); }], ['👁', 17, () => setFP(!fp)], ['🖊️', 18, () => flickPens()],
-  ['🪟', 19, () => { curtains.forEach(c => { c.goal = c.goal > 0.5 ? 0 : 1; }); wave += 1.5; A.sfx('paper', 0.5); }], ['🪑', 20, () => spinChair()], ['🚪', 21, () => toggleDoors()], ['🌅', 22, () => { dayRun = !dayRun; toast(dayRun ? 'The day is running' : 'Day paused'); }], ['🔍', 23, () => zoomSet(zoomK * 1.4)]
+  ['🪟', 19, () => { curtains.forEach(c => { c.goal = c.goal > 0.5 ? 0 : 1; }); wave += 1.5; A.sfx('paper', 0.5); }], ['🪑', 20, () => spinChair()], ['🚪', 21, () => toggleDoors()], ['🌅', 22, () => { dayRun = !dayRun; toast(dayRun ? 'The day is running' : 'Day paused'); }], ['🔍', 23, () => zoomSet(zoomK * 1.4)], ['🖍️', 24, () => openBoardUI()], ['🎚️', 25, () => { closeModals(); $('#musicPop').classList.add('open'); mp.sync(); }], ['⚙️', 26, () => openSettings()]
 ];
 function buildCards() {
   const box = $('#cards'); box.innerHTML = '';
@@ -735,12 +755,49 @@ function buildCards() {
   });
 }
 
+/* ---------- settings: colours, curtains, interface ---------- */
+const SWATCH = {
+  wall: ['#d9cdb8', '#b9c9b0', '#b7cfe3', '#e8c4c4', '#cfc3e3', '#e0c27a', '#4a4f5c', '#f1efe9'],
+  desk: ['#ffffff', '#a9815f', '#6e5a4c', '#ffe0a8'],
+  floor: ['#3a2b22', '#6b5a48', '#2b3340', '#8a8f98'],
+  curtain: ['#e9d9b8', '#d98a96', '#4fa3a5', '#2d4a7a', '#2f7d5a', '#8c2f39', '#a08cc9', '#454a54']
+};
+const GROUPS = [['wall', '#swWall', '#cWall'], ['desk', '#swDesk', '#cDesk'], ['floor', '#swFloor', '#cFloor'], ['curtain', '#swCur', '#cCur']];
+function saveSettings() { try { localStorage.setItem('deskSettings', JSON.stringify(SET)); } catch (e) {} }
+function applySettings() {
+  const wc = new THREE.Color(SET.wall);
+  wall.material.color.copy(wc);
+  shells.forEach(([m, c]) => { if (c === '#d3c7b2' || c === '#cfc3ae') m.material.color.copy(wc).multiplyScalar(0.96); if (c === '#3a2b22') m.material.color.set(SET.floor); });
+  desk.children[0].material.color.set(SET.desk);
+  curtains.forEach(c => { c.root.material.color.set(SET.curtain); c.root.material.opacity = SET.sheer; });
+  A.setMaster(SET.master);
+  renderer.setPixelRatio(SET.low ? 1 : Math.min(devicePixelRatio, small ? 1.5 : 2));
+  const ss = SET.low ? 512 : small ? 1024 : 2048;
+  if (sun.shadow.mapSize.x !== ss) { sun.shadow.mapSize.set(ss, ss); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  resize();
+  GROUPS.forEach(([key, boxSel, inSel]) => { [...$(boxSel).children].forEach(b => b.classList.toggle('on', b.dataset.c.toLowerCase() === String(SET[key]).toLowerCase())); $(inSel).value = SET[key]; });
+  $('#sSheer').value = SET.sheer; $('#sAuto').checked = SET.autohide; $('#sLow').checked = SET.low; $('#sMaster').value = SET.master;
+}
+function buildSettings() {
+  GROUPS.forEach(([key, boxSel, inSel]) => {
+    SWATCH[key].forEach(c => { const b = document.createElement('button'); b.className = 'swatch'; b.style.background = c; b.title = c; b.dataset.c = c; b.onclick = () => { SET[key] = c; saveSettings(); applySettings(); A.sfx('click'); }; $(boxSel).append(b); });
+    $(inSel).oninput = (e) => { SET[key] = e.target.value; saveSettings(); applySettings(); };
+  });
+  $('#sSheer').oninput = (e) => { SET.sheer = +e.target.value; saveSettings(); applySettings(); };
+  $('#sAuto').onchange = (e) => { SET.autohide = e.target.checked; saveSettings(); if (window.__showUI) window.__showUI(); };
+  $('#sLow').onchange = (e) => { SET.low = e.target.checked; saveSettings(); applySettings(); };
+  $('#sMaster').oninput = (e) => { SET.master = +e.target.value; saveSettings(); A.setMaster(SET.master); };
+  $('#setReset').onclick = () => { Object.assign(SET, SET0); saveSettings(); applySettings(); A.sfx('paper', 0.6); toast('Settings reset'); };
+}
+function openSettings() { showModal('settings'); setActive('settings'); }
+function openBoardUI() { showModal('board'); boardCtl.mount($('#boardHost')); }
+
 /* ---------- wire up the chrome ---------- */
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { closeModals(); closeDrawer(); setActive('desk'); });
 document.querySelectorAll('.modal').forEach(m => m.addEventListener('pointerdown', (e) => { if (e.target === m) { closeModals(); setActive('desk'); } }));
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
   A.init(); const g = b.dataset.go;
-  if (g === 'desk') goDesk(); else if (g === 'laptop') zoomLaptop(); else if (g === 'books') openShelf(); else if (g === 'pomo') openPomo(); else if (g === 'phone') openPhoneUI(); else if (g === 'news') openNewsUI();
+  if (g === 'desk') goDesk(); else if (g === 'laptop') zoomLaptop(); else if (g === 'books') openShelf(); else if (g === 'pomo') openPomo(); else if (g === 'phone') openPhoneUI(); else if (g === 'news') openNewsUI(); else if (g === 'settings') openSettings();
   else if (g === 'explore') { closeModals(); if (osOpen()) closeOS(); const d = $('#explore'); d.classList.toggle('open'); setActive(d.classList.contains('open') ? 'explore' : 'desk'); }
 });
 $('#brand').onclick = (e) => { e.preventDefault(); goDesk(); };
@@ -751,7 +808,7 @@ function syncAimUI() { sl.x.value = lampAimGoal.x; sl.z.value = lampAimGoal.z; }
 sl.b.oninput = () => { lampBright = +sl.b.value; if (!lampOn) setLamp(true); };
 sl.w.oninput = () => { lampWarm = +sl.w.value; };
 sl.x.oninput = sl.z.oninput = () => { lampAimGoal.set(+sl.x.value, 0, +sl.z.value); if (!lampOn) setLamp(true); };
-$('#lampBtn').onclick = () => { A.init(); const pop = $('#lampPop'); pop.classList.toggle('open'); if (pop.classList.contains('open')) { closeModals(); $('#explore').classList.remove('open'); syncAimUI(); } A.sfx('click'); };
+$('#lampBtn').onclick = () => { A.init(); $('#musicPop').classList.remove('open'); const pop = $('#lampPop'); pop.classList.toggle('open'); if (pop.classList.contains('open')) { closeModals(); $('#explore').classList.remove('open'); syncAimUI(); } A.sfx('click'); };
 $('#lpOn').onchange = (e) => { A.init(); setLamp(e.target.checked); A.sfx('click'); toast(t(lampOn ? 't_lamp_on' : 't_lamp_off')); };
 $('#dayR').oninput = (e) => { hour = +e.target.value; applyHour(); };
 $('#dayIc').onclick = () => { A.init(); dayRun = !dayRun; toast(dayRun ? 'The day is running. Click the sun to pause.' : 'Day paused'); };
@@ -762,9 +819,7 @@ $('#fpBtn').onclick = () => { A.init(); closeModals(); closeDrawer(); if (osOpen
 window.addEventListener('desk:news', openNewsUI); window.addEventListener('desk:pomo', () => openPomo()); window.addEventListener('desk:lamp', toggleLamp);
 window.addEventListener('desk:laptop', () => zoomLaptop()); window.addEventListener('desk:window', () => setWindow(!winOpen)); window.addEventListener('audiochange', () => syncMusicUI());
 $('#resetBtn').onclick = () => { A.init(); resetDesk(); };
-$('#mPlay').onclick = () => { A.init(); A.setMusic(!A.isMusic()); syncMusicUI(); if (A.isMusic()) toast(t('t_music')); };
-$('#mRain').onclick = () => { A.init(); A.setRain(!A.isRain()); syncMusicUI(); if (A.isRain()) toast(t('t_rain')); };
-$('#mVol').oninput = (e) => A.setVolume(+e.target.value);
+const mp = initMusicPanel({ toast });
 addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (osOpen()) closeOS(); closeModals(); closeDrawer(); setActive('desk'); } });
 window.addEventListener('langchange', () => { buildCards(); if (curBook && $('#reader').classList.contains('show')) renderPage(); if ($('#shelf').classList.contains('show')) openShelf(); pmRender(); });
 $('#enter').onclick = () => {
@@ -789,7 +844,7 @@ function initNav() {
 initNav();
 function initAutoHide() {
   const body = document.body; let tmr = 0;
-  const busy = () => $('.nav').matches(':hover') || $('.dockbar').matches(':hover') || $('#lampPop').classList.contains('open') || $('#explore').classList.contains('open') || !!document.querySelector('.modal.open') || osOpen() || !$('#intro').classList.contains('gone');
+  const busy = () => !SET.autohide || $('.nav').matches(':hover') || $('.dockbar').matches(':hover') || $('#lampPop').classList.contains('open') || $('#explore').classList.contains('open') || !!document.querySelector('.modal.open') || osOpen() || !$('#intro').classList.contains('gone');
   const hide = () => { if (busy()) { tmr = setTimeout(hide, 1500); return; } body.classList.add('ui-hidden'); };
   const show = () => { body.classList.remove('ui-hidden'); clearTimeout(tmr); tmr = setTimeout(hide, 4500); };
   addEventListener('pointermove', (e) => { if (e.clientY < 90 || e.clientY > innerHeight - 90) show(); });
@@ -800,7 +855,7 @@ function initAutoHide() {
 initAutoHide();
 
 /* ================= go ================= */
-apply(); initGadgets(); buildCards(); setTime('golden', true); snapTime(); drawSky(0); drawClock();
+apply(); initGadgets(); buildCards(); buildSettings(); applySettings(); setTime('golden', true); snapTime(); drawSky(0); drawClock();
 setGoal(); resize(); camPos.copy(goalPos); lookCur.copy(goalLook);
 for (let i = 0; i < 260; i++) world.step(1 / 60); // let the stacks settle
 items.forEach(o => { if (o.body) { o.home = { p: o.body.position.clone(), q: o.body.quaternion.clone() }; o.root.position.copy(o.body.position); o.root.quaternion.copy(o.body.quaternion); } });
@@ -814,6 +869,9 @@ if (url.get('win')) setWindow(true, true);
 if (url.get('fp')) setFP(true, true);
 if (url.get('open') === 'phone') setTimeout(() => openPhoneUI(), 300);
 if (url.get('open') === 'news') setTimeout(() => openNewsUI(), 300);
+if (url.get('open') === 'settings') setTimeout(() => openSettings(), 300);
+if (url.get('open') === 'board') setTimeout(() => openBoardUI(), 300);
+if (url.get('open') === 'music') setTimeout(() => { $('#musicPop').classList.add('open'); mp.sync(); }, 300);
 if (url.get('open') === 'laptop') setTimeout(() => zoomLaptop(), 300);
 if (url.get('open') === 'book') setTimeout(() => openBook('polity'), 300);
 
@@ -836,7 +894,7 @@ function frame() {
     o.root.position.copy(o.body.position); o.root.quaternion.copy(o.body.quaternion);
     if (o.body.position.y < -4 && o !== drag) { o.body.position.copy(o.home.p); o.body.position.y += 2; o.body.velocity.setZero(); o.body.angularVelocity.setZero(); }
   }
-  updateLampAim(dt); envUpdate(dt, time); birds.update(dt, time); updateRoom(dt); drawClock();
+  updateLampAim(dt); envUpdate(dt, time); birds.update(dt, time); updateRoom(dt); mp.draw(); drawClock();
   const k = 1 - Math.exp(-dt * 3.2);
   const zk = mode === 'desk' && !fp ? zoomK : 1;
   _gp.copy(goalLook).lerp(goalPos, zk); camPos.lerp(_gp, k); lookCur.lerp(goalLook, k);

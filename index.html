@@ -24,6 +24,7 @@
     <button class="rib" data-go="news" style="--c:#b8741a"><i>📰</i><span data-i18n="nav_news">News</span></button>
     <button class="rib" data-go="pomo" style="--c:#e0702a"><i>⏱️</i><span data-i18n="nav_pomo">Focus</span></button>
     <button class="rib" data-go="explore" style="--c:#1f9d9d"><i>✦</i><span data-i18n="nav_explore">Explore</span></button>
+    <button class="rib" data-go="settings" style="--c:#5f6b7a"><i>⚙️</i><span>Settings</span></button>
   </nav>
   <div class="nav-right"></div>
 </header>
@@ -42,10 +43,23 @@
   <button class="pill round" id="winBtn" title="Window">🪟</button>
   <button class="pill round" id="fpBtn" title="First person view">👁</button>
   <div class="pill zoom"><button id="zOut" aria-label="Zoom out">−</button><span id="zLbl">100%</span><button id="zIn" aria-label="Zoom in">+</button></div>
-  <div class="pill music" id="music">
+  <div class="pill music musicgrp" id="music">
     <button id="mPlay" class="vinyl" aria-label="Play or pause music">▶</button>
-    <input id="mVol" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Volume">
-    <button id="mRain" aria-label="Rain sound" title="Rain">🌧</button>
+    <button id="mCfg" class="round-s" aria-label="Music controls" title="Music controls">🎚</button>
+    <div class="musicpop" id="musicPop">
+      <div class="mp-head"><canvas id="mpViz" width="150" height="48"></canvas><div class="mp-title"><b id="mpName">Lo-fi chill</b><span id="mpSub">Paused</span></div></div>
+      <div class="mp-transport"><button id="mpPrev" aria-label="Previous style">⏮</button><button id="mpPlay" class="big" aria-label="Play or pause">▶</button><button id="mpNext" aria-label="Next style">⏭</button><button id="mpMute" aria-label="Mute">🔊</button></div>
+      <div class="mp-styles" id="mpStyles"></div>
+      <div class="mp-row"><span>Volume</span><input id="mpVol" type="range" min="0" max="1" step="0.01" value="0.5"></div>
+      <div class="mp-row"><span>Tempo</span><input id="mpTempo" type="range" min="0.6" max="1.6" step="0.05" value="1"></div>
+      <div class="mp-row"><span>Echo</span><input id="mpEcho" type="range" min="0" max="1" step="0.01" value="0.45"></div>
+      <div class="mp-row"><span>Warmth</span><input id="mpWarm" type="range" min="0" max="1" step="0.01" value="0.5"></div>
+      <div class="mp-sep">Ambience</div>
+      <div class="mp-amb"><button id="mpRain">🌧 Rain</button><button id="mpCrick">🦗 Crickets</button><button id="mpFire">🔥 Fireplace</button></div>
+      <div class="mp-row"><span>Rain level</span><input id="mpRainV" type="range" min="0" max="1" step="0.01" value="0.55"></div>
+      <div class="mp-row"><span>Wind</span><input id="mpWind" type="range" min="0" max="1" step="0.01" value="0"></div>
+      <div class="mp-row"><span>Sleep timer</span><select id="mpSleep"><option value="0">Off</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select></div>
+    </div>
   </div>
   <button class="pill round" id="resetBtn" title="Reset desk">↺</button>
 </div>
@@ -118,6 +132,33 @@
       <section class="ph-view" id="ph-music"><div class="ph-disc" id="phDisc"></div><button class="qz-opt" id="pmPlay">▶ Play lo-fi</button><button class="qz-opt" id="pmRain">🌧 Rain: off</button></section>
     </div>
     <button class="ph-home" id="phBar" aria-label="Home"></button>
+  </div>
+</div>
+
+<!-- WHITEBOARD -->
+<div class="modal" id="board" aria-hidden="true">
+  <div class="board-wrap"><button class="x" data-close="board">✕</button><h3>Whiteboard</h3><div id="boardHost"></div>
+    <div class="board-tools" id="boardTools">
+      <button data-col="#1d4ed8" aria-label="Blue"></button><button data-col="#dc2626" aria-label="Red"></button><button data-col="#16a34a" aria-label="Green"></button><button data-col="#111827" aria-label="Black"></button><button data-col="#ea580c" aria-label="Orange"></button><button data-col="#7c3aed" aria-label="Purple"></button>
+      <input id="bSize" type="range" min="2" max="16" value="5" aria-label="Marker size"><button id="bErase" class="tl">Eraser</button><button id="bReset" class="tl">Reset</button><button id="bSave" class="tl">Save PNG</button>
+    </div></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="modal" id="settings" aria-hidden="true">
+  <div class="set-wrap"><button class="x" data-close="settings">✕</button><h3>Settings</h3>
+    <section><h4>Room</h4>
+      <div class="set-row"><span>Walls</span><div class="swatches" id="swWall"></div><input type="color" id="cWall" aria-label="Custom wall colour"></div>
+      <div class="set-row"><span>Desk wood</span><div class="swatches" id="swDesk"></div><input type="color" id="cDesk" aria-label="Custom desk tint"></div>
+      <div class="set-row"><span>Floor</span><div class="swatches" id="swFloor"></div><input type="color" id="cFloor" aria-label="Custom floor colour"></div></section>
+    <section><h4>Curtains</h4>
+      <div class="set-row"><span>Colour</span><div class="swatches" id="swCur"></div><input type="color" id="cCur" aria-label="Custom curtain colour"></div>
+      <div class="set-row"><span>Sheerness</span><input type="range" id="sSheer" min="0.4" max="1" step="0.02"></div></section>
+    <section><h4>General</h4>
+      <label class="set-row"><span>Auto-hide menus</span><input type="checkbox" id="sAuto"></label>
+      <label class="set-row"><span>Low graphics mode</span><input type="checkbox" id="sLow"></label>
+      <div class="set-row"><span>Master volume</span><input type="range" id="sMaster" min="0" max="1" step="0.01"></div></section>
+    <button class="qz-opt" id="setReset">Reset all settings</button>
   </div>
 </div>
 
