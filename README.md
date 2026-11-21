@@ -1,62 +1,78 @@
-# 🪑 Ajeet's UPSC Desk — a 3D study room you can touch
+# 🪑 Ajeet's UPSC Desk: a 3D study room you can touch
 
-> The landing page *is* a desk. Open books, run the laptop, flip the lamp, toss the water bottle — all in 3D, all in your browser.
+> The landing page *is* a desk. Open books, run the laptop, check the phone, slide the curtains, open the window for birdsong, flip the lamp, toss the water bottle. All in 3D, all in your browser.
 
 **🔗 Live site:** https://ajeet-iitk.github.io/upsc-desk/
+**💻 Offline:** just double-click `index.html`. It works from a plain file, no server needed.
 
 ![Golden hour](screenshots/golden.png)
 
-| ☀️ Morning | 🌙 2 AM revision mode |
+| ☀️ Morning, window open | 🌙 2 AM revision mode |
 |---|---|
 | ![Morning](screenshots/morning.png) | ![Night](screenshots/night.png) |
 
-| 💻 Laptop OS + Chrome search | 📚 Open any book |
-|---|---|
-| ![Laptop](screenshots/laptop.png) | ![Book](screenshots/book.png) |
+| 💻 Laptop OS + search | 📚 Books | 📱 Phone | 📰 Newspaper |
+|---|---|---|---|
+| ![Laptop](screenshots/laptop.png) | ![Book](screenshots/book.png) | ![Phone](screenshots/phone.png) | ![News](screenshots/news.png) |
 
-<p align="center"><img src="screenshots/mobile.png" width="260" alt="Mobile view"></p>
+| 👁 First-person view | 📱 Mobile |
+|---|---|
+| ![First person](screenshots/firstperson.png) | <img src="screenshots/mobile.png" width="220" alt="Mobile view"> |
 
 ## ✨ What you can do
 
-- **Run the laptop** – click it and the camera zooms in to a tiny web OS: a working **Chrome-style search** (results from the Wikipedia API), **Notes** (auto-saved) and a **Syllabus tracker** (progress saved locally).
-- **Day / golden hour / 2 AM** – the window sky, sun & moon, shadows, lighting and even the UI theme blend smoothly. At night the **desk lamp** glows and city windows light up.
-- **Adjustable lamp** – drag the lamp on the desk to aim its beam, or open the ⚙ panel for brightness, warmth and direction sliders. Click the 💡 in the navbar to switch it on/off.
-- **Interactive navbar** – a gliding highlight follows your cursor, icons magnify like a dock, and the language/time switches slide between options.
-- **Real physics** (Three.js + cannon-es) – grab, drag and toss the water bottle, pen stand, Rubik's cube, glass paperweight, chai cup, books and notebooks. Each material has its own sound (plastic thud, paper rustle, glass ting, cube clack).
-- **Books** – five subject books (Polity, History, Geography, Economy, Ethics) with high-yield revision notes.
-- **Revision timer** – click the red notebook for a Pomodoro (25 / 5 / 50).
-- **Lo-fi music + rain** – generated live with WebAudio. No audio files, no copyright worries. Volume + rain controls included.
-- **Languages** – English · हिंदी · Hinglish.
-- **Explore panel** – a list of every interactive thing on the site.
-- **Mobile friendly** – touch to drag, swipe the empty wall to pan.
+**Look around**
+- **Drag the wall** to look around. **Zoom** with `+` / `−`, the mouse wheel, or pinch on a phone.
+- **First-person mode** (the 👁 button): stand at the desk and look around the whole room, including the roller chair, the bookshelf and two doors.
 
-## 🚀 Run locally
+**The desk**
+- **Laptop** – zoom into a small web OS: Chrome-style search (Wikipedia API), auto-saved Notes, syllabus tracker.
+- **Smartphone** – lock screen, calculator, UPSC quiz, lo-fi player, shortcuts to the rest of the desk.
+- **Newspaper** – "The Daily Aspirant": term of the day, answer-writing prompts, fact file, links to real news.
+- **Books** (Polity, History, Geography, Economy, Ethics) with revision notes. **Notebook** = Pomodoro timer.
+- **Real physics** (Three.js + cannon-es): toss the bottle, cup, Rubik's cube, paperweight, books, phone, paper. **Pens and a pencil** you can flick and spin. Every material makes its own sound.
 
-It is a static site (no build step). ES modules need a server:
+**The room**
+- **Day slider** – slide through all 24 hours. Sun and moon travel across the sky, light and shadows follow, city windows light up at night. Click the sun icon to run the day automatically.
+- **Lamp** – one control: switch, brightness, warmth and aim, or just drag the lamp on the desk to aim it.
+- **Curtains** – drag them sideways to slide, they wave in the breeze.
+- **Window** – opens for fresh air (wind sound, swaying curtains). Click the sky for fireworks, click the sun or moon to jump the time. Traffic and birds move outside.
+- **Morning birds** – open the window and birds fly in, perch on the sill and sing. Click one and it flies off.
+- **Roller chair** – click it to spin and roll. **Doors** – click to open (one behind the desk, one behind you).
+- **Lo-fi music and rain** are generated live with WebAudio, so there are no audio files.
 
-```bash
-npx serve .          # or: python -m http.server 8000
-```
-
-Open the printed URL. Three.js and cannon-es load from the jsDelivr CDN.
+**Interface**
+- Ribbon navbar hanging from a brass rail. It reacts to your cursor.
+- The top and bottom bars **hide when not needed** and slide back when you move to the edge (or tap the tab).
+- Smooth transitions everywhere. Works on mobile.
 
 ## 🧱 Tech
 
-Three.js r160 · cannon-es 0.20 · WebAudio · vanilla JS modules · zero build tools.
+Three.js r160 · cannon-es 0.20 · WebAudio · vanilla JS, bundled with esbuild into one classic script (`dist/app.js`) so it runs from `file://`.
 
 ```
 index.html      page + UI markup
-css/style.css   glass UI, day/night themes, responsive
+css/style.css   UI, ribbons, dock, themes, responsive
 js/main.js      3D scene, physics, lighting, camera, input
+js/birds.js     3D birds that perch and sing
+js/gadgets.js   phone apps + newspaper
 js/os.js        laptop OS (search, notes, syllabus)
-js/audio.js     generated music, rain and sound effects
+js/audio.js     generated music, rain, wind, birdsong, effects
 js/books.js     book notes
-js/i18n.js      EN / HI / Hinglish strings
+js/i18n.js      UI strings (the site is English-only)
+dist/app.js     built bundle (what index.html loads)
+```
+
+### Rebuild after editing `js/`
+
+```bash
+npm install
+npm run build
 ```
 
 ## 💡 Ideas for later
 
-Answer-writing coach (timer + word counter), current-affairs "newspaper" you can unfold, mock-test mode on the laptop, a wall calendar counting down to Prelims, a tea-making mini game, a shareable "my desk" snapshot, streaks for daily study hours.
+Answer-writing coach (timer + word counter), mock-test mode on the laptop, a wall calendar counting down to Prelims, a tea-making mini game, streaks for daily study hours.
 
 ---
 Made with ☕ and too many tabs open.

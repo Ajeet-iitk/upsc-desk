@@ -1,0 +1,13 @@
+{
+  "name": "upsc-desk",
+  "private": true,
+  "description": "Interactive 3D UPSC aspirant desk",
+  "scripts": {
+    "build": "esbuild js/main.js --bundle --minify --format=iife --target=es2019 --outfile=dist/app.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5",
+    "three": "0.160.0",
+    "cannon-es": "0.20.0"
+  }
+}

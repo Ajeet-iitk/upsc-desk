@@ -4,58 +4,54 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Ajeet's UPSC Desk — a 3D study room</title>
-<meta name="description" content="An interactive 3D desk of a UPSC aspirant. Open books, run the laptop, flip the lamp, toss the water bottle. Day, golden hour and 2 AM revision mode.">
+<meta name="description" content="An interactive 3D desk of a UPSC aspirant. Open books, run the laptop, check the phone, open the window for birdsong, flip the lamp, toss the water bottle.">
 <meta name="theme-color" content="#14182b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314182b'/%3E%3Cpath d='M20 50 L28 30 h8 l8 20z' fill='%23ffd479'/%3E%3Ccircle cx='32' cy='22' r='9' fill='%23ffb347'/%3E%3Cpath d='M12 52h40' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
-<script type="importmap">
-{ "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
-} }
-</script>
 </head>
 <body data-theme="day">
 <canvas id="scene" aria-label="Interactive 3D study desk"></canvas>
 
-<!-- NAVBAR -->
+<!-- TOP: ribbons hanging from a brass rail -->
 <header class="nav">
-  <a class="brand" href="#" id="brand"><span class="brand-lamp">💡</span><span class="brand-t">Ajeet<span>'s Desk</span></span></a>
-  <nav class="nav-links">
-    <button data-go="desk" class="active"><i>🪑</i><span data-i18n="nav_desk">Desk</span></button>
-    <button data-go="laptop"><i>💻</i><span data-i18n="nav_laptop">Laptop</span></button>
-    <button data-go="books"><i>📚</i><span data-i18n="nav_books">Books</span></button>
-    <button data-go="pomo"><i>⏱️</i><span data-i18n="nav_pomo">Focus</span></button>
-    <button data-go="explore"><i>✦</i><span data-i18n="nav_explore">Explore</span></button>
+  <span class="rail"></span>
+  <a class="brand" href="#" id="brand"><span class="brand-lamp" title="Lamp">💡</span><span class="brand-t">Ajeet<span>'s Desk</span></span></a>
+  <nav class="nav-links ribbons">
+    <button class="rib active" data-go="desk" style="--c:#c0392b"><i>🪑</i><span data-i18n="nav_desk">Desk</span></button>
+    <button class="rib" data-go="laptop" style="--c:#2e6fb0"><i>💻</i><span data-i18n="nav_laptop">Laptop</span></button>
+    <button class="rib" data-go="books" style="--c:#2f7d4f"><i>📚</i><span data-i18n="nav_books">Books</span></button>
+    <button class="rib" data-go="phone" style="--c:#7b4bb0"><i>📱</i><span data-i18n="nav_phone">Phone</span></button>
+    <button class="rib" data-go="news" style="--c:#b8741a"><i>📰</i><span data-i18n="nav_news">News</span></button>
+    <button class="rib" data-go="pomo" style="--c:#e0702a"><i>⏱️</i><span data-i18n="nav_pomo">Focus</span></button>
+    <button class="rib" data-go="explore" style="--c:#1f9d9d"><i>✦</i><span data-i18n="nav_explore">Explore</span></button>
   </nav>
-  <div class="nav-right">
-    <div class="seg lang" id="langSeg" role="group" aria-label="Language">
-      <button data-lang="en">EN</button><button data-lang="hi">हि</button><button data-lang="hg">Hing</button>
-    </div>
-  </div>
+  <div class="nav-right"></div>
 </header>
 
-<!-- BOTTOM DOCK: time of day + lamp + music -->
+<!-- BOTTOM: day slider + tools -->
 <div class="dockbar">
-  <div class="seg tod" id="todSeg" role="group" aria-label="Time of day">
-    <button data-tod="morning">☀️ <span data-i18n="tod_morning">Morning</span></button>
-    <button data-tod="golden">🌇 <span data-i18n="tod_golden">Golden</span></button>
-    <button data-tod="night">🌙 <span data-i18n="tod_night">2 AM</span></button>
-  </div>
-  <div class="lampgrp"><button class="pill" id="lampBtn" title="Lamp">💡 <span data-i18n="lamp">Lamp</span></button><button class="pill gear" id="lampCfg" aria-label="Lamp settings">⚙</button>
-    <div class="lamppop" id="lampPop"><p class="tip" data-i18n="lamp_tip">Tip: drag the lamp on the desk to aim it.</p>
-      <label><span data-i18n="lamp_bright">Brightness</span><input id="lpB" type="range" min="0.2" max="2" step="0.05" value="1"></label>
-      <label><span data-i18n="lamp_warm">Warmth</span><input id="lpW" type="range" min="0" max="1" step="0.02" value="0.35"></label>
-      <label><span data-i18n="lamp_aimx">Aim ← →</span><input id="lpX" type="range" min="-4" max="4" step="0.05" value="0.4"></label>
-      <label><span data-i18n="lamp_aimz">Aim ↑ ↓</span><input id="lpZ" type="range" min="-1.8" max="3" step="0.05" value="-0.2"></label></div></div>
+  <div class="daytrack" id="dayTrack"><button class="dt-ic" id="dayIc" title="Click to run the day">🌇</button><input id="dayR" type="range" min="0" max="24" step="0.05" value="17.8" aria-label="Time of day"><span class="dt-lbl" id="dayLbl">5:48 PM</span></div>
+  <div class="lampgrp"><button class="pill" id="lampBtn" title="Lamp">💡 <span>Lamp</span></button>
+    <div class="lamppop" id="lampPop">
+      <label class="sw"><input id="lpOn" type="checkbox"><span>Lamp light</span></label>
+      <p class="tip">Tip: drag the lamp on the desk to aim it.</p>
+      <label><span>Brightness</span><input id="lpB" type="range" min="0.2" max="2" step="0.05" value="1"></label>
+      <label><span>Warmth</span><input id="lpW" type="range" min="0" max="1" step="0.02" value="0.35"></label>
+      <label><span>Aim left / right</span><input id="lpX" type="range" min="-4" max="4" step="0.05" value="0.4"></label>
+      <label><span>Aim near / far</span><input id="lpZ" type="range" min="-1.8" max="3" step="0.05" value="-0.2"></label></div></div>
+  <button class="pill round" id="winBtn" title="Window">🪟</button>
+  <button class="pill round" id="fpBtn" title="First person view">👁</button>
+  <div class="pill zoom"><button id="zOut" aria-label="Zoom out">−</button><span id="zLbl">100%</span><button id="zIn" aria-label="Zoom in">+</button></div>
   <div class="pill music" id="music">
-    <button id="mPlay" aria-label="Play or pause music">▶</button>
+    <button id="mPlay" class="vinyl" aria-label="Play or pause music">▶</button>
     <input id="mVol" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Volume">
     <button id="mRain" aria-label="Rain sound" title="Rain">🌧</button>
   </div>
-  <button class="pill" id="resetBtn" title="Reset">↺ <span data-i18n="reset">Reset</span></button>
+  <button class="pill round" id="resetBtn" title="Reset desk">↺</button>
 </div>
-<div class="hint" id="hint" data-i18n="hint">Drag &amp; toss anything · Click the laptop, books, lamp &amp; window</div>
+<button class="tab tab-top" id="tabTop" aria-label="Show menu">▾</button>
+<button class="tab tab-bottom" id="tabBot" aria-label="Show controls">▴</button>
+<div class="hint" id="hint" data-i18n="hint">Drag objects · Drag the wall to look around · Click laptop, phone, books, lamp &amp; window</div>
 <div class="toast" id="toast"></div>
 
 <!-- INTRO -->
@@ -101,6 +97,35 @@
   </div>
 </div>
 
+<!-- SMARTPHONE -->
+<div class="modal" id="phone" aria-hidden="true">
+  <div class="phone-frame">
+    <button class="x" data-close="phone">✕</button>
+    <div class="ph-notch"></div>
+    <div class="ph-screen">
+      <section class="ph-view show" id="ph-lock">
+        <div class="ph-time" id="phTime"></div><div class="ph-date" id="phDate"></div>
+        <div class="ph-notifs">
+          <div><b>⏰ Revision</b><span>Answer-writing at 6 PM</span></div>
+          <div><b>📰 Daily Aspirant</b><span>Today's practice edition is ready</span></div>
+          <div><b>🔥 Streak</b><span>Keep the chain unbroken</span></div>
+        </div>
+        <div class="ph-swipe">Tap to unlock</div>
+      </section>
+      <section class="ph-view" id="ph-home"><div class="ph-apps" id="phApps"></div></section>
+      <section class="ph-view" id="ph-calc"><div class="calc-expr" id="calcExpr"></div><div class="calc-out" id="calcOut">0</div><div class="calc-keys" id="calcKeys"></div></section>
+      <section class="ph-view" id="ph-quiz"><div class="quiz" id="quizBox"></div></section>
+      <section class="ph-view" id="ph-music"><div class="ph-disc" id="phDisc"></div><button class="qz-opt" id="pmPlay">▶ Play lo-fi</button><button class="qz-opt" id="pmRain">🌧 Rain: off</button></section>
+    </div>
+    <button class="ph-home" id="phBar" aria-label="Home"></button>
+  </div>
+</div>
+
+<!-- NEWSPAPER -->
+<div class="modal" id="news" aria-hidden="true">
+  <div class="news-wrap"><button class="x" data-close="news">✕</button><div class="np" id="newsBody"></div></div>
+</div>
+
 <!-- LAPTOP OS -->
 <div class="os" id="os" aria-hidden="true">
   <div class="os-laptop">
@@ -134,6 +159,6 @@
 </div>
 
 <noscript>This site needs JavaScript and WebGL.</noscript>
-<script type="module" src="js/main.js"></script>
+<script src="dist/app.js"></script>
 </body>
 </html>

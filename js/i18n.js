@@ -1,9 +1,9 @@
 // E (English) / H (Hindi) / HG (Hinglish, Gen-Z)
 export const STR = {
   en: {
-    nav_desk:'Desk', nav_laptop:'Laptop', nav_books:'Books', nav_pomo:'Focus', nav_explore:'Explore',
+    nav_desk:'Desk', nav_laptop:'Laptop', nav_books:'Books', nav_pomo:'Focus', nav_explore:'Explore', nav_phone:'Phone', nav_news:'News', fp_on:'First-person view. Drag to look around 👁', fp_off:'Back to desk view', t_win_open:'Window open. Fresh air 🌿', t_win_close:'Window closed', t_birds:'Birds are singing outside 🐦',
     tod_morning:'Morning', tod_golden:'Golden', tod_night:'2 AM', lamp:'Lamp', lamp_tip:'Tip: drag the lamp on the desk to aim it.', lamp_bright:'Brightness', lamp_warm:'Warmth', lamp_aimx:'Aim ← →', lamp_aimz:'Aim ↑ ↓', reset:'Reset',
-    hint:'Drag & toss anything · Click the laptop, books, lamp & window',
+    hint:'Drag objects · Drag the wall to look around · Slide the curtains · Click laptop, phone, books, lamp & window',
     intro_t:'Step into my study room', intro_s:'A 3D desk of a UPSC aspirant. Touch everything.', intro_btn:'Enter', intro_note:'Sound on for the full experience 🔊',
     ex_title:'Explore the desk', ex_sub:'Everything on this site you can touch, try or break.',
     shelf:'Shelf', back:'Back to desk',
@@ -24,12 +24,14 @@ export const STR = {
     ex10_t:'Motivation poster', ex10_d:'Click the wall posters for a daily dose.',
     ex11_t:'Switch language', ex11_d:'English → हिंदी → Hinglish.',
     ex12_t:'Reset the desk', ex12_d:'Tidy up the chaos in one click.',
+    ex13_t:'Use the phone', ex13_d:'Calculator, a UPSC quiz, music and more.', ex14_t:'Read the newspaper', ex14_d:'Term of the day, writing prompts, fact file.', ex15_t:'Open the window', ex15_d:'Fresh air, wind, a swaying curtain. Click the sky for fireworks.', ex16_t:'Morning birds', ex16_d:'Open the window at sunrise. They come, sit and sing.', ex17_t:'First-person view', ex17_d:'Stand at the desk. Drag to look around the room.', ex18_t:'Flick the pens', ex18_d:'Click a pen to spin it. Drag to toss it.',
+    ex19_t:'Slide the curtains', ex19_d:'Drag them sideways. They wave. Click to open or close.', ex20_t:'Roller chair', ex20_d:'Spin and roll it. Look down in first person to find it.', ex21_t:'Open the doors', ex21_d:'One behind the desk, one behind you.', ex22_t:'Run the day', ex22_d:'Sunrise to 2 AM. Or drag the day slider yourself.', ex23_t:'Zoom out', ex23_d:'Use + and -, the mouse wheel, or pinch.',
     quotes:['Discipline beats motivation.','Consistency > intensity.','One more answer-writing practice.','The syllabus is vast, but so is your patience.','Aaj ka kaam aaj. Revision kal ka bhi.']
   },
   hi: {
-    nav_desk:'डेस्क', nav_laptop:'लैपटॉप', nav_books:'किताबें', nav_pomo:'फोकस', nav_explore:'एक्सप्लोर',
+    nav_desk:'डेस्क', nav_laptop:'लैपटॉप', nav_books:'किताबें', nav_pomo:'फोकस', nav_explore:'एक्सप्लोर', nav_phone:'फोन', nav_news:'अख़बार', fp_on:'फर्स्ट-पर्सन व्यू। चारों ओर देखने के लिए खींचें 👁', fp_off:'डेस्क व्यू पर वापस', t_win_open:'खिड़की खुली। ताज़ी हवा 🌿', t_win_close:'खिड़की बंद', t_birds:'बाहर चिड़ियाँ चहक रही हैं 🐦',
     tod_morning:'सुबह', tod_golden:'सुनहरी शाम', tod_night:'रात 2 बजे', lamp:'लैंप', lamp_tip:'सुझाव: लैंप को डेस्क पर खींचकर रोशनी की दिशा बदलें।', lamp_bright:'चमक', lamp_warm:'गर्माहट', lamp_aimx:'दिशा ← →', lamp_aimz:'दिशा ↑ ↓', reset:'रीसेट',
-    hint:'किसी भी चीज़ को खींचें और उछालें · लैपटॉप, किताबें, लैंप और खिड़की पर क्लिक करें',
+    hint:'चीज़ें खींचें · दीवार खींचकर चारों ओर देखें · लैपटॉप, फोन, किताबें, लैंप और खिड़की पर क्लिक करें',
     intro_t:'मेरे स्टडी रूम में आपका स्वागत है', intro_s:'एक UPSC अभ्यर्थी की 3D डेस्क। सब कुछ छूकर देखिए।', intro_btn:'प्रवेश करें', intro_note:'पूरे अनुभव के लिए आवाज़ चालू रखें 🔊',
     ex_title:'डेस्क एक्सप्लोर करें', ex_sub:'इस साइट पर जो कुछ भी आप छू सकते हैं, आज़मा सकते हैं।',
     shelf:'अलमारी', back:'डेस्क पर वापस',
@@ -50,12 +52,13 @@ export const STR = {
     ex10_t:'प्रेरणा पोस्टर', ex10_d:'रोज़ की प्रेरणा के लिए पोस्टर पर क्लिक करें।',
     ex11_t:'भाषा बदलें', ex11_d:'English → हिंदी → Hinglish।',
     ex12_t:'डेस्क रीसेट', ex12_d:'एक क्लिक में सब कुछ वापस ठीक।',
+    ex13_t:'फोन चलाएँ', ex13_d:'कैलकुलेटर, UPSC क्विज़, संगीत और बहुत कुछ।', ex14_t:'अख़बार पढ़ें', ex14_d:'आज का शब्द, लेखन अभ्यास, फैक्ट फ़ाइल।', ex15_t:'खिड़की खोलें', ex15_d:'ताज़ी हवा, झूलता पर्दा। आसमान पर क्लिक करें, आतिशबाज़ी!', ex16_t:'सुबह की चिड़ियाँ', ex16_d:'सुबह खिड़की खोलें। वे आती हैं, बैठती हैं, गाती हैं।', ex17_t:'फर्स्ट-पर्सन व्यू', ex17_d:'डेस्क पर खड़े हों। कमरे में चारों ओर देखें।', ex18_t:'पेन घुमाएँ', ex18_d:'पेन पर क्लिक करके घुमाएँ। खींचकर उछालें।',
     quotes:['अनुशासन प्रेरणा से बड़ा है।','निरंतरता तीव्रता से बेहतर है।','एक और उत्तर-लेखन अभ्यास।','पाठ्यक्रम विशाल है, पर आपका धैर्य भी।','आज का काम आज, रिवीज़न कल का भी।']
   },
   hg: {
-    nav_desk:'Desk', nav_laptop:'Laptop', nav_books:'Kitaabein', nav_pomo:'Focus', nav_explore:'Explore',
+    nav_desk:'Desk', nav_laptop:'Laptop', nav_books:'Kitaabein', nav_pomo:'Focus', nav_explore:'Explore', nav_phone:'Phone', nav_news:'Akhbaar', fp_on:'First-person view. Drag karke dekho 👁', fp_off:'Desk view pe wapas', t_win_open:'Window khuli. Fresh hawa 🌿', t_win_close:'Window band', t_birds:'Bahar chidiya chahak rahi hain 🐦',
     tod_morning:'Subah', tod_golden:'Golden', tod_night:'2 AM', lamp:'Lamp', lamp_tip:'Tip: lamp ko desk pe drag karke light aim karo.', lamp_bright:'Brightness', lamp_warm:'Warmth', lamp_aimx:'Aim ← →', lamp_aimz:'Aim ↑ ↓', reset:'Reset',
-    hint:'Kuch bhi drag karo aur uchhalo · Laptop, books, lamp aur window pe click karo',
+    hint:'Kuch bhi drag karo · Wall drag karke chaaro taraf dekho · Laptop, phone, books, lamp, window pe click karo',
     intro_t:'Mere study room mein aa jao', intro_s:'Ek UPSC aspirant ki 3D desk. Sab kuch chhu ke dekho.', intro_btn:'Andar chalo', intro_note:'Poore vibe ke liye sound on rakho 🔊',
     ex_title:'Desk explore karo', ex_sub:'Is site pe jo bhi chhu sakte ho, try karo ya tod do.',
     shelf:'Shelf', back:'Desk pe wapas',
@@ -76,13 +79,13 @@ export const STR = {
     ex10_t:'Motivation poster', ex10_d:'Daily dose ke liye wall poster pe click karo.',
     ex11_t:'Language badlo', ex11_d:'English → हिंदी → Hinglish.',
     ex12_t:'Desk reset', ex12_d:'Ek click mein sab theek.',
+    ex13_t:'Phone chalao', ex13_d:'Calculator, UPSC quiz, music aur bahut kuch.', ex14_t:'Akhbaar padho', ex14_d:'Term of the day, writing prompts, fact file.', ex15_t:'Window kholo', ex15_d:'Fresh hawa, jhoolta parda. Sky pe click karo, fireworks!', ex16_t:'Morning birds', ex16_d:'Subah window kholo. Aati hain, baithti hain, gaati hain.', ex17_t:'First-person view', ex17_d:'Desk pe khade ho jao. Room mein chaaro taraf dekho.', ex18_t:'Pens ghumao', ex18_d:'Pen pe click karke spin karo. Drag karke uchhalo.',
     quotes:['Discipline > motivation, no cap.','Consistency > intensity.','Ek aur answer-writing practice.','Syllabus bada hai, par tera patience bhi.','Aaj ka kaam aaj. Revision kal ka bhi.']
   }
 };
 
+// The language picker was removed: the site is English-only. The hi / hg strings above are kept for later.
 let lang = 'en';
-try { lang = localStorage.getItem('lang') || 'en'; } catch (e) {}
-if (!STR[lang]) lang = 'en';
 
 export const getLang = () => lang;
 export const t = (k) => (STR[lang] && STR[lang][k]) ?? STR.en[k] ?? k;

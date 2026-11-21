@@ -1,6 +1,6 @@
 // All sound is generated live with WebAudio — no audio files needed.
 let ctx, master, musicG, sfxG, rainG, noiseBuf, musicBus, padLP;
-let musicOn = false, rainOn = false, vol = 0.5, chordIdx = 0, mood = 'golden', timer = null;
+let windG, musicOn = false, rainOn = false, vol = 0.5, chordIdx = 0, mood = 'golden', timer = null;
 
 const CHORDS = [
   [110, 220, 261.63, 329.63, 392],      // Am7
@@ -37,6 +37,32 @@ export function init() {
   const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 0.5;
   const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5000;
   rs.connect(bp); bp.connect(lp); lp.connect(rainG); rs.start();
+
+  // wind (for the open window): slow-swelling filtered noise
+  windG = ctx.createGain(); windG.gain.value = 0; windG.connect(master);
+  const ws = ctx.createBufferSource(); ws.buffer = noiseBuf; ws.loop = true; ws.playbackRate.value = 0.6;
+  const wb = ctx.createBiquadFilter(); wb.type = 'bandpass'; wb.frequency.value = 520; wb.Q.value = 0.7;
+  const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.12; lg.gain.value = 0.035;
+  lfo.connect(lg); lg.connect(windG.gain); lfo.start();
+  ws.connect(wb); wb.connect(windG); ws.start();
+}
+export function setWindow(open) { init(); if (!ctx) return; windG.gain.setTargetAtTime(open ? 0.07 : 0, ctx.currentTime, 0.8); }
+
+// bird song: little sweeps of sine tones, muffled when the window is shut
+export function chirp(vol = 0.35, muffled = false, species = 0) {
+  if (!ctx || ctx.state !== 'running') return;
+  const t0 = ctx.currentTime;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = muffled ? 1500 : 14000;
+  const out = ctx.createGain(); out.gain.value = vol; lp.connect(out); out.connect(sfxG);
+  const n = 3 + ((Math.random() * 6) | 0), base = (species ? 3300 : 2500) + Math.random() * 900;
+  let t = t0;
+  for (let i = 0; i < n; i++) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), f = base * (0.85 + Math.random() * 0.5), d = 0.04 + Math.random() * 0.09;
+    o.type = 'sine'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * (Math.random() < 0.5 ? 1.4 : 0.7), t + d);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + d * 0.25); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(lp); o.start(t); o.stop(t + d + 0.03);
+    t += d + 0.03 + Math.random() * 0.09;
+  }
 }
 
 export function setMood(m) {
@@ -111,6 +137,8 @@ export function sfx(kind = 'wood', v = 0.5) {
     case 'key':     burst(t0, 0.03, 3200, 'highpass', 0.35); tone(t0, 1300, 700, 0.03, 0.05, 'square'); break;
     case 'click':   burst(t0, 0.025, 2500, 'highpass', 0.6); tone(t0, 1500, 900, 0.04, 0.12, 'square'); break;
     case 'ding':    tone(t0, 880, 880, 0.9, 0.22); tone(t0 + 0.12, 1320, 1320, 1.0, 0.18); break;
+    case 'pop':     burst(t0, 0.25, 700, 'lowpass', v * 0.8); tone(t0, 380, 70, 0.3, v * 0.35); burst(t0 + 0.06, 0.4, 5000, 'highpass', v * 0.15); break;
+    case 'door':    tone(t0, 160, 92, 0.7, 0.1, 'sawtooth'); burst(t0 + 0.62, 0.12, 260, 'lowpass', 0.5); break;
     case 'whoosh':  burst(t0, 0.5, 900, 'bandpass', 0.35, 0.7); break;
     default:        burst(t0, 0.14, 380, 'lowpass', v * 1.1); tone(t0, 120, 55, 0.14, v * 0.5);
   }
