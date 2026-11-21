@@ -42,7 +42,12 @@
     <button data-tod="golden">🌇 <span data-i18n="tod_golden">Golden</span></button>
     <button data-tod="night">🌙 <span data-i18n="tod_night">2 AM</span></button>
   </div>
-  <button class="pill" id="lampBtn" title="Lamp">💡 <span data-i18n="lamp">Lamp</span></button>
+  <div class="lampgrp"><button class="pill" id="lampBtn" title="Lamp">💡 <span data-i18n="lamp">Lamp</span></button><button class="pill gear" id="lampCfg" aria-label="Lamp settings">⚙</button>
+    <div class="lamppop" id="lampPop"><p class="tip" data-i18n="lamp_tip">Tip: drag the lamp on the desk to aim it.</p>
+      <label><span data-i18n="lamp_bright">Brightness</span><input id="lpB" type="range" min="0.2" max="2" step="0.05" value="1"></label>
+      <label><span data-i18n="lamp_warm">Warmth</span><input id="lpW" type="range" min="0" max="1" step="0.02" value="0.35"></label>
+      <label><span data-i18n="lamp_aimx">Aim ← →</span><input id="lpX" type="range" min="-4" max="4" step="0.05" value="0.4"></label>
+      <label><span data-i18n="lamp_aimz">Aim ↑ ↓</span><input id="lpZ" type="range" min="-1.8" max="3" step="0.05" value="-0.2"></label></div></div>
   <div class="pill music" id="music">
     <button id="mPlay" aria-label="Play or pause music">▶</button>
     <input id="mVol" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Volume">

@@ -20,6 +20,8 @@
 
 - **Run the laptop** – click it and the camera zooms in to a tiny web OS: a working **Chrome-style search** (results from the Wikipedia API), **Notes** (auto-saved) and a **Syllabus tracker** (progress saved locally).
 - **Day / golden hour / 2 AM** – the window sky, sun & moon, shadows, lighting and even the UI theme blend smoothly. At night the **desk lamp** glows and city windows light up.
+- **Adjustable lamp** – drag the lamp on the desk to aim its beam, or open the ⚙ panel for brightness, warmth and direction sliders. Click the 💡 in the navbar to switch it on/off.
+- **Interactive navbar** – a gliding highlight follows your cursor, icons magnify like a dock, and the language/time switches slide between options.
 - **Real physics** (Three.js + cannon-es) – grab, drag and toss the water bottle, pen stand, Rubik's cube, glass paperweight, chai cup, books and notebooks. Each material has its own sound (plastic thud, paper rustle, glass ting, cube clack).
 - **Books** – five subject books (Polity, History, Geography, Economy, Ethics) with high-yield revision notes.
 - **Revision timer** – click the red notebook for a Pomodoro (25 / 5 / 50).

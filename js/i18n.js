@@ -2,7 +2,7 @@
 export const STR = {
   en: {
     nav_desk:'Desk', nav_laptop:'Laptop', nav_books:'Books', nav_pomo:'Focus', nav_explore:'Explore',
-    tod_morning:'Morning', tod_golden:'Golden', tod_night:'2 AM', lamp:'Lamp', reset:'Reset',
+    tod_morning:'Morning', tod_golden:'Golden', tod_night:'2 AM', lamp:'Lamp', lamp_tip:'Tip: drag the lamp on the desk to aim it.', lamp_bright:'Brightness', lamp_warm:'Warmth', lamp_aimx:'Aim ← →', lamp_aimz:'Aim ↑ ↓', reset:'Reset',
     hint:'Drag & toss anything · Click the laptop, books, lamp & window',
     intro_t:'Step into my study room', intro_s:'A 3D desk of a UPSC aspirant. Touch everything.', intro_btn:'Enter', intro_note:'Sound on for the full experience 🔊',
     ex_title:'Explore the desk', ex_sub:'Everything on this site you can touch, try or break.',
@@ -28,7 +28,7 @@ export const STR = {
   },
   hi: {
     nav_desk:'डेस्क', nav_laptop:'लैपटॉप', nav_books:'किताबें', nav_pomo:'फोकस', nav_explore:'एक्सप्लोर',
-    tod_morning:'सुबह', tod_golden:'सुनहरी शाम', tod_night:'रात 2 बजे', lamp:'लैंप', reset:'रीसेट',
+    tod_morning:'सुबह', tod_golden:'सुनहरी शाम', tod_night:'रात 2 बजे', lamp:'लैंप', lamp_tip:'सुझाव: लैंप को डेस्क पर खींचकर रोशनी की दिशा बदलें।', lamp_bright:'चमक', lamp_warm:'गर्माहट', lamp_aimx:'दिशा ← →', lamp_aimz:'दिशा ↑ ↓', reset:'रीसेट',
     hint:'किसी भी चीज़ को खींचें और उछालें · लैपटॉप, किताबें, लैंप और खिड़की पर क्लिक करें',
     intro_t:'मेरे स्टडी रूम में आपका स्वागत है', intro_s:'एक UPSC अभ्यर्थी की 3D डेस्क। सब कुछ छूकर देखिए।', intro_btn:'प्रवेश करें', intro_note:'पूरे अनुभव के लिए आवाज़ चालू रखें 🔊',
     ex_title:'डेस्क एक्सप्लोर करें', ex_sub:'इस साइट पर जो कुछ भी आप छू सकते हैं, आज़मा सकते हैं।',
@@ -54,7 +54,7 @@ export const STR = {
   },
   hg: {
     nav_desk:'Desk', nav_laptop:'Laptop', nav_books:'Kitaabein', nav_pomo:'Focus', nav_explore:'Explore',
-    tod_morning:'Subah', tod_golden:'Golden', tod_night:'2 AM', lamp:'Lamp', reset:'Reset',
+    tod_morning:'Subah', tod_golden:'Golden', tod_night:'2 AM', lamp:'Lamp', lamp_tip:'Tip: lamp ko desk pe drag karke light aim karo.', lamp_bright:'Brightness', lamp_warm:'Warmth', lamp_aimx:'Aim ← →', lamp_aimz:'Aim ↑ ↓', reset:'Reset',
     hint:'Kuch bhi drag karo aur uchhalo · Laptop, books, lamp aur window pe click karo',
     intro_t:'Mere study room mein aa jao', intro_s:'Ek UPSC aspirant ki 3D desk. Sab kuch chhu ke dekho.', intro_btn:'Andar chalo', intro_note:'Poore vibe ke liye sound on rakho 🔊',
     ex_title:'Desk explore karo', ex_sub:'Is site pe jo bhi chhu sakte ho, try karo ya tod do.',

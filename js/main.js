@@ -220,7 +220,17 @@ scene.add(lampLight); scene.add(lampLight.target); lampLight.target.position.set
 addItem({ id: 'lamp', root: lamp, onClick: () => toggleLamp() });
 lamp.updateMatrixWorld(true);
 staticBox(0.5, 0.1, 0.5, 3.4, 0.1, -1.45);
-const _hp = new V3(); bulb.getWorldPosition(_hp); lampLight.position.copy(_hp);
+const lampAim = new V3(0.4, 0, -0.2), lampAimGoal = lampAim.clone(), _hp = new V3(), _hw = new V3(), _d = new V3();
+let lampBright = 1, lampWarm = 0.35, aimingLamp = false;
+function updateLampAim(dt) {
+  lampAim.lerp(lampAimGoal, 1 - Math.exp(-dt * 9));
+  _hw.copy(lamp.position).add(head.position);
+  _d.copy(lampAim).sub(_hw).normalize();
+  head.quaternion.setFromUnitVectors(new V3(0, -1, 0), _d);
+  lamp.updateMatrixWorld(true);
+  bulb.getWorldPosition(_hp); lampLight.position.copy(_hp); lampLight.target.position.copy(lampAim);
+}
+updateLampAim(1);
 
 /* ---------- books ---------- */
 function bookLabel(def) {
@@ -355,7 +365,7 @@ function setTime(name, quiet) {
   if (A.setMood) { try { A.setMood(name); } catch (e) {} }
   if (!quiet) { toast(t('t_' + name)); A.sfx('whoosh'); }
 }
-function setLamp(on) { lampOn = on; $('#lampBtn').classList.toggle('on', on); }
+function setLamp(on) { lampOn = on; $('#lampBtn').classList.toggle('on', on); $('.brand-lamp').classList.toggle('lit', on); }
 function toggleLamp() { setLamp(!lampOn); A.sfx('click'); toast(t(lampOn ? 't_lamp_on' : 't_lamp_off')); }
 
 function envUpdate(dt, time) {
@@ -365,7 +375,8 @@ function envUpdate(dt, time) {
   hemi.color.copy(cur.hemiS); hemi.groundColor.copy(cur.hemiG); hemi.intensity = cur.hemiI;
   renderer.toneMappingExposure = cur.exp;
   lampK += ((lampOn ? 1 : 0) - lampK) * (1 - Math.exp(-dt * 7));
-  lampLight.intensity = lampK * (30 + cur.lights * 150);
+  lampLight.intensity = lampK * lampBright * (30 + cur.lights * 150);
+  lampLight.color.set('#ff9a45').lerp(C('#fff3dc'), lampWarm);
   bulbMat.color.set('#4a4a4a').lerp(C('#fff0c4'), lampK).multiplyScalar(1 + lampK * 0.6);
   screenGlow.intensity = 1.2 + cur.lights * 7;
   screenMesh.material.color.setScalar(0.85 + 0.15 * (1 - cur.lights));
@@ -401,6 +412,7 @@ canvas.addEventListener('pointerdown', (ev) => {
   A.init(); setNdc(ev);
   const h = pick(); down = { x: ev.clientX, y: ev.clientY, t: performance.now(), item: h && h.item };
   closeDrawer();
+  aimingLamp = !!(h && h.item.id === 'lamp');
   if (!h) panning = { x: ev.clientX, p: panX, pid: ev.pointerId };
   if (h && h.item.body) {
     drag = h.item; dragLift = 1.0 + (h.item.lift || 0);
@@ -410,11 +422,16 @@ canvas.addEventListener('pointerdown', (ev) => {
 });
 canvas.addEventListener('pointermove', (ev) => {
   setNdc(ev); parGoal.set(ndc.x * 0.45, ndc.y * 0.25, 0);
+  if (aimingLamp && down && Math.hypot(ev.clientX - down.x, ev.clientY - down.y) > 7) {
+    ray.setFromCamera(ndc, camera); plane.constant = 0;
+    if (ray.ray.intersectPlane(plane, tmp)) { lampAimGoal.set(clamp(tmp.x, -4, 4), 0, clamp(tmp.z, -1.8, 3)); syncAimUI(); if (!lampOn) setLamp(true); }
+    canvas.classList.add('grabbing');
+  }
   if (panning) { const d = goalPos.z - goalLook.z, wpp = (2 * d * 0.384 * (innerWidth / innerHeight)) / innerWidth; panX = clamp(panning.p - (ev.clientX - panning.x) * wpp, -panLimit(), panLimit()); canvas.classList.add('grabbing'); }
   if (!drag && ev.pointerType === 'mouse' && mode === 'desk' && !modalOpen()) canvas.classList.toggle('pointer', !!pick());
 });
 function endPointer(ev) {
-  const was = drag; drag = null; panning = null; canvas.classList.remove('grabbing');
+  const was = drag; drag = null; panning = null; aimingLamp = false; canvas.classList.remove('grabbing');
   if (!down) return;
   const moved = Math.hypot(ev.clientX - down.x, ev.clientY - down.y), dt = performance.now() - down.t;
   if (moved < 9 && dt < 450 && down.item && down.item.onClick && !modalOpen()) down.item.onClick();
@@ -427,9 +444,9 @@ canvas.addEventListener('pointerup', endPointer); canvas.addEventListener('point
 let toastT;
 function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2600); }
 function setActive(name) { document.querySelectorAll('.nav-links button').forEach(b => b.classList.toggle('active', b.dataset.go === name)); }
-function closeDrawer() { $('#explore').classList.remove('open'); }
-function closeModals() { document.querySelectorAll('.modal.open').forEach(m => { m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); }); }
-function showModal(id) { closeModals(); closeDrawer(); const m = $('#' + id); m.classList.add('open'); m.setAttribute('aria-hidden', 'false'); }
+function closeDrawer() { $('#explore').classList.remove('open'); $('#lampPop').classList.remove('open'); }
+function closeModals() { document.body.classList.remove('dim'); document.querySelectorAll('.modal.open').forEach(m => { m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); }); }
+function showModal(id) { closeModals(); closeDrawer(); document.body.classList.add('dim'); const m = $('#' + id); m.classList.add('open'); m.setAttribute('aria-hidden', 'false'); }
 function goDesk() { closeModals(); closeDrawer(); if (osOpen()) closeOS(); mode = 'desk'; setGoal(); setActive('desk'); }
 function zoomLaptop(app = 'chrome') {
   closeModals(); closeDrawer(); mode = 'laptop'; setGoal(); setActive('laptop'); A.sfx('whoosh');
@@ -475,6 +492,7 @@ document.querySelectorAll('[data-pm]').forEach(b => b.onclick = () => { document
 
 /* ---------- desk actions ---------- */
 function resetDesk(quiet) {
+  lampAimGoal.set(0.4, 0, -0.2); lampBright = 1; lampWarm = 0.35; sl.b.value = 1; sl.w.value = 0.35; syncAimUI();
   items.forEach(o => { if (!o.body) return; o.body.position.copy(o.home.p); o.body.quaternion.copy(o.home.q); o.body.velocity.setZero(); o.body.angularVelocity.setZero(); });
   if (!quiet) toast(t('t_reset'));
 }
@@ -513,6 +531,13 @@ $('#brand').onclick = (e) => { e.preventDefault(); goDesk(); };
 document.querySelectorAll('#langSeg button').forEach(b => b.onclick = () => { setLang(b.dataset.lang); A.sfx('click'); });
 document.querySelectorAll('#todSeg button').forEach(b => b.onclick = () => { A.init(); setTime(b.dataset.tod); });
 $('#lampBtn').onclick = () => { A.init(); toggleLamp(); };
+const sl = { b: $('#lpB'), w: $('#lpW'), x: $('#lpX'), z: $('#lpZ') };
+function syncAimUI() { sl.x.value = lampAimGoal.x; sl.z.value = lampAimGoal.z; }
+sl.b.oninput = () => { lampBright = +sl.b.value; if (!lampOn) setLamp(true); };
+sl.w.oninput = () => { lampWarm = +sl.w.value; };
+sl.x.oninput = sl.z.oninput = () => { lampAimGoal.set(+sl.x.value, 0, +sl.z.value); if (!lampOn) setLamp(true); };
+$('#lampCfg').onclick = () => { A.init(); const pop = $('#lampPop'); pop.classList.toggle('open'); if (pop.classList.contains('open')) { closeModals(); $('#explore').classList.remove('open'); syncAimUI(); } A.sfx('click'); };
+$('.brand-lamp').onclick = (e) => { e.preventDefault(); e.stopPropagation(); A.init(); toggleLamp(); };
 $('#resetBtn').onclick = () => { A.init(); resetDesk(); };
 $('#mPlay').onclick = () => { A.init(); A.setMusic(!A.isMusic()); syncMusicUI(); if (A.isMusic()) toast(t('t_music')); };
 $('#mRain').onclick = () => { A.init(); A.setRain(!A.isRain()); syncMusicUI(); if (A.isRain()) toast(t('t_rain')); };
@@ -525,6 +550,26 @@ $('#enter').onclick = () => {
   A.sfx('click'); setTimeout(() => $('#hint').classList.add('hide'), 10000);
 };
 
+/* ---------- creative navbar ---------- */
+function initNav() {
+  const wrap = $('.nav-links'), blob = document.createElement('i'); blob.className = 'blob'; wrap.prepend(blob);
+  const btns = [...wrap.querySelectorAll('button')], act = () => btns.find(b => b.classList.contains('active'));
+  const place = (b) => { if (!b) { blob.style.opacity = 0; return; } blob.style.opacity = 1; blob.style.width = b.offsetWidth + 'px'; blob.style.transform = `translateX(${b.offsetLeft}px)`; btns.forEach(x => x.classList.toggle('under', x === b)); };
+  btns.forEach(b => b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') place(b); }));
+  wrap.addEventListener('pointerleave', () => { place(act()); btns.forEach(b => { b.firstElementChild.style.transform = ''; }); });
+  wrap.addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') return; btns.forEach(b => { const r = b.getBoundingClientRect(), d = e.clientX - (r.left + r.width / 2), sc = 1 + 0.4 * Math.exp(-(d * d) / 6050); b.firstElementChild.style.transform = `translateY(${(1 - sc) * 14}px) scale(${sc})`; }); });
+  new MutationObserver(() => { if (!wrap.matches(':hover')) place(act()); }).observe(wrap, { attributes: true, subtree: true, attributeFilter: ['class'] });
+  addEventListener('resize', () => place(act())); window.addEventListener('langchange', () => setTimeout(() => place(act()), 60)); setTimeout(() => place(act()), 120);
+  const nav = $('.nav'); nav.addEventListener('pointermove', (e) => nav.style.setProperty('--mx', e.clientX - nav.getBoundingClientRect().left + 'px'));
+  document.querySelectorAll('.seg').forEach(seg => {
+    const th = document.createElement('span'); th.className = 'thumb'; seg.classList.add('slide'); seg.prepend(th);
+    const upd = () => { const on = seg.querySelector('button.on'); if (!on) { th.style.opacity = 0; return; } th.style.opacity = 1; th.style.width = on.offsetWidth + 'px'; th.style.transform = `translateX(${on.offsetLeft}px)`; };
+    new MutationObserver(upd).observe(seg, { attributes: true, subtree: true, attributeFilter: ['class'] });
+    addEventListener('resize', upd); window.addEventListener('langchange', () => setTimeout(upd, 60)); setTimeout(upd, 120); setTimeout(upd, 600);
+  });
+}
+initNav();
+
 /* ================= go ================= */
 apply(); buildCards(); setTime('golden', true); snapTime(); drawSky(0); drawClock();
 setGoal(); resize(); camPos.copy(goalPos); lookCur.copy(goalLook);
@@ -533,6 +578,7 @@ items.forEach(o => { if (o.body) { o.home = { p: o.body.position.clone(), q: o.b
 ready = true;
 const url = new URLSearchParams(location.search);
 if (url.get('t') && TOD[url.get('t')]) { setTime(url.get('t'), true); snapTime(); drawSky(0); if (url.get('lamp') === '1') { setLamp(true); lampK = 1; } }
+if (url.get('ax')) { lampAimGoal.set(+url.get('ax'), 0, +url.get('az') || 0); lampAim.copy(lampAimGoal); }
 if (url.get('skip')) { $('#intro').classList.add('gone'); }
 if (url.get('open') === 'laptop') setTimeout(() => zoomLaptop(), 300);
 if (url.get('open') === 'book') setTimeout(() => openBook('polity'), 300);
@@ -556,7 +602,7 @@ function frame() {
     o.root.position.copy(o.body.position); o.root.quaternion.copy(o.body.quaternion);
     if (o.body.position.y < -4 && o !== drag) { o.body.position.copy(o.home.p); o.body.position.y += 2; o.body.velocity.setZero(); o.body.angularVelocity.setZero(); }
   }
-  envUpdate(dt, time); drawClock();
+  updateLampAim(dt); envUpdate(dt, time); drawClock();
   const k = 1 - Math.exp(-dt * 3.2);
   const px = mode === 'desk' ? panX : 0; camPos.lerp(tmp.copy(goalPos).setX(px), k); lookCur.lerp(tmp.copy(goalLook).setX(px), k);
   par.lerp(mode === 'desk' ? parGoal : tmp.set(0, 0, 0), 1 - Math.exp(-dt * 3));

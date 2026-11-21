@@ -131,3 +131,49 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
   .os-laptop{height:calc(100vh - 150px);border-width:6px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01s!important}}
+
+/* ===== creative navbar ===== */
+.nav{animation:navIn .9s cubic-bezier(.2,.9,.3,1) both;overflow:visible}
+@keyframes navIn{from{transform:translateY(-130%);opacity:0}}
+.nav::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .5s;background:radial-gradient(190px circle at var(--mx,50%) 50%,rgba(255,190,110,.28),transparent 70%)}
+.nav:hover::before{opacity:1}
+.nav-links{position:relative;padding:4px;border-radius:16px;background:rgba(127,127,127,.13);gap:2px}
+.nav-links .blob{position:absolute;top:4px;bottom:4px;left:0;width:0;border-radius:12px;z-index:0;pointer-events:none;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 6px 18px rgba(255,150,50,.38);transition:transform .55s cubic-bezier(.34,1.45,.64,1),width .55s cubic-bezier(.34,1.45,.64,1),opacity .35s}
+.nav-links button{z-index:1;transition:color .3s,transform .25s}
+.nav-links button i{transition:transform .22s cubic-bezier(.2,.8,.2,1);display:inline-block}
+.nav-links button.under{color:#1d1206}
+.nav-links button:hover{background:none}
+.nav-links button.active::after{display:none!important}
+.brand-lamp{cursor:pointer;filter:grayscale(.9) brightness(.8);transition:filter .5s,transform .3s}
+.brand-lamp.lit{filter:drop-shadow(0 0 8px var(--accent2)) drop-shadow(0 0 16px var(--accent))}
+.brand-lamp:hover{transform:scale(1.25)}
+.seg.slide{position:relative}.seg.slide button{position:relative;z-index:1}
+.seg.slide button.on{background:none;box-shadow:none}
+.seg .thumb{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 3px 10px rgba(0,0,0,.28);transition:transform .5s cubic-bezier(.34,1.45,.64,1),width .5s cubic-bezier(.34,1.45,.64,1),opacity .3s}
+
+/* ===== lamp popover ===== */
+.lampgrp{position:relative;display:flex;gap:6px}
+.pill.gear{padding:9px 11px}.pill.gear:hover{transform:rotate(60deg)}
+.lamppop{position:absolute;bottom:calc(100% + 12px);left:50%;width:240px;margin-left:-120px;padding:14px;border-radius:18px;background:color-mix(in srgb,var(--bg) 92%,transparent);border:1px solid var(--glass-b);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;opacity:0;visibility:hidden;transform:translateY(14px) scale(.94);transform-origin:bottom center;transition:opacity .35s,transform .45s cubic-bezier(.2,.9,.3,1.2),visibility .35s}
+.lamppop.open{opacity:1;visibility:visible;transform:none}
+.lamppop .tip{margin:0;font-size:12px;color:var(--ink2);line-height:1.35}
+.lamppop label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:700}
+.lamppop input{width:100%;accent-color:var(--accent)}
+
+/* ===== smooth transitions everywhere ===== */
+button,.card,.chip,.res,.syll label,.spineb,.cta,.x,.seg button,.os-dock button,.pomo-modes button,.cbtn,.btn2,.ext a{transition:transform .28s cubic-bezier(.2,.8,.2,1),background-color .35s,background .35s,color .35s,box-shadow .35s,border-color .35s,opacity .35s,filter .35s}
+.nav-links button{transition:color .3s,transform .25s}
+button:active:not(.x){transform:scale(.94)!important}
+.pill{transition:transform .28s cubic-bezier(.2,.8,.2,1),background-color .6s,background .6s,color .35s,box-shadow .35s,border-color .6s}
+body{animation:pageIn 1s ease both}
+@keyframes pageIn{from{opacity:0}}
+#scene{transition:filter .6s ease,opacity .8s}
+body.dim #scene{filter:blur(3px) brightness(.72) saturate(.9)}
+.dockbar{animation:dockIn 1s .25s cubic-bezier(.2,.9,.3,1) both}
+@keyframes dockIn{from{transform:translateY(140%);opacity:0}}
+.res{transition:background-color .3s,transform .25s,padding-left .25s}.res:hover{background:rgba(255,255,255,.05);padding-left:12px}
+.syll label{transition:background .3s,transform .25s}.syll label:hover{transform:translateX(4px)}
+.syll input+span{transition:opacity .3s}
+.modal{transition:opacity .45s ease,visibility .45s}
+.drawer{transition:transform .55s cubic-bezier(.2,.8,.2,1),background .8s,opacity .4s}
+@media (max-width:760px){.lamppop{left:auto;right:-60px;margin-left:0}}
