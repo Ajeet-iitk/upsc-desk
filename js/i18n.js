@@ -28,6 +28,7 @@ export const STR = {
     ex19_t:'Slide the curtains', ex19_d:'Drag them sideways. They wave. Click to open or close.', ex20_t:'Roller chair', ex20_d:'Spin and roll it. Look down in first person to find it.', ex21_t:'Open the door', ex21_d:'The door behind the desk. Click it to swing it open.', ex22_t:'Run the day', ex22_d:'Sunrise to 2 AM. Or drag the day slider yourself.', ex23_t:'Zoom out', ex23_d:'Use + and -, the mouse wheel, or pinch.',
     ex24_t:'Whiteboard', ex24_d:'UPSC roadmap with doodles and sticky notes. Click it, then draw on it.', ex25_t:'Music controls', ex25_d:'5 styles, a mixer, rain, wind, crickets, fireplace, sleep timer.', ex26_t:'Settings', ex26_d:'Change the colour of the walls, desk, floor and curtains.',
     ex27_t:'Weather', ex27_d:'Rain running down the glass, storms with thunder, dawn fog. Tap the weather button to cycle.', ex28_t:'Ceiling fan', ex28_d:'Look up in first-person view. Click it to change speed.', ex29_t:'Desk drawer', ex29_d:'Slides open with surprise items. Drag them out onto the desk.',
+    ex30_t:'Sit on the chair', ex30_d:'See your own hands on the desk. Press Esc or click the chair button to stand.', ex31_t:'Pin a sticky note', ex31_d:'Write a note by hand and pin it to the whiteboard.',
     quotes:['Discipline beats motivation.','Consistency > intensity.','One more answer-writing practice.','The syllabus is vast, but so is your patience.','Aaj ka kaam aaj. Revision kal ka bhi.']
   },
   hi: {

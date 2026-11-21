@@ -1,5 +1,6 @@
 // All sound is generated live with WebAudio. No audio files needed.
 let fanG, fanLfo, ctx, master, musicG, sfxG, rainG, windG, cricketG, crackleG, noiseBuf, musicBus, padLP, analyser, echoWet;
+const live = new Set();
 let timer = null, sleepT = null, sleepEnd = 0, chordIdx = 0, mood = 'golden', melIdx = 3;
 const st = { music: false, rain: false, rainLvl: 0.55, wind: 0, windowOpen: false, crickets: false, crackle: false,
   vol: 0.5, tempo: 1, echo: 0.45, warm: 0.5, style: 0, master: 0.9, muted: false };
@@ -52,16 +53,18 @@ export function init() {
   // wind: slowly swelling filtered noise (open window and the wind slider)
   const ws = ctx.createBufferSource(); ws.buffer = noiseBuf; ws.loop = true; ws.playbackRate.value = 0.6;
   const wb = ctx.createBiquadFilter(); wb.type = 'bandpass'; wb.frequency.value = 520; wb.Q.value = 0.7;
-  const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.12; lg.gain.value = 0.03;
-  lfo.connect(lg); lg.connect(windG.gain); lfo.start();
-  ws.connect(wb); wb.connect(windG); ws.start();
+  const wmod = ctx.createGain(); wmod.gain.value = 0.7;
+  const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.12; lg.gain.value = 0.3;
+  lfo.connect(lg); lg.connect(wmod.gain); lfo.start();
+  ws.connect(wb); wb.connect(wmod); wmod.connect(windG); ws.start();
 
   // ceiling fan hum
   fanG = ctx.createGain(); fanG.gain.value = 0; fanG.connect(master);
   const fs = ctx.createBufferSource(); fs.buffer = noiseBuf; fs.loop = true; fs.playbackRate.value = 0.5;
   const fbp = ctx.createBiquadFilter(); fbp.type = 'bandpass'; fbp.frequency.value = 260; fbp.Q.value = 0.9;
-  fanLfo = ctx.createOscillator(); fanLfo.frequency.value = 3; const fl = ctx.createGain(); fl.gain.value = 0.02; fanLfo.connect(fl); fl.connect(fanG.gain); fanLfo.start();
-  fs.connect(fbp); fbp.connect(fanG); fs.start();
+  const fmod = ctx.createGain(); fmod.gain.value = 0.7;
+  fanLfo = ctx.createOscillator(); fanLfo.frequency.value = 3; const fl = ctx.createGain(); fl.gain.value = 0.3; fanLfo.connect(fl); fl.connect(fmod.gain); fanLfo.start();
+  fs.connect(fbp); fbp.connect(fmod); fmod.connect(fanG); fs.start();
 
   // crickets: pulsing high tones
   [[4300, 17], [4700, 13], [5100, 21]].forEach(([f, r]) => {
@@ -81,7 +84,12 @@ export function init() {
 /* ---------- apply state to the graph ---------- */
 const now = () => ctx.currentTime;
 function applyFilter() { if (ctx) padLP.frequency.setTargetAtTime(350 * Math.pow(2, st.warm * 3) * (mood === 'night' ? 0.7 : 1), now(), 0.3); }
-function applyMusic() { if (ctx) musicG.gain.setTargetAtTime(st.music ? st.vol * 0.9 : 0, now(), 0.4); }
+function applyMusic() {
+  if (!ctx) return;
+  musicG.gain.cancelScheduledValues(now());
+  musicG.gain.setTargetAtTime(st.music ? st.vol * 0.9 : 0, now(), st.music ? 0.4 : 0.12);
+  if (!st.music) live.forEach(o => { try { o.stop(now() + 0.7); } catch (e) {} });
+}
 function applyRain() { if (ctx) rainG.gain.setTargetAtTime(st.rain ? st.rainLvl * 0.5 : 0, now(), 0.6); }
 function applyWind() { if (ctx) windG.gain.setTargetAtTime(Math.max(st.windowOpen ? 0.07 : 0, st.wind * 0.2), now(), 0.8); }
 function applyAll() {
@@ -99,6 +107,7 @@ function note(freq, t0, dur, type, gain, dest) {
   g.gain.exponentialRampToValueAtTime(gain, t0 + Math.min(1.8, dur * 0.35));
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   o.connect(g); g.connect(dest); o.start(t0); o.stop(t0 + dur + 0.1);
+  live.add(o); o.onended = () => live.delete(o);
   return o;
 }
 function pad(ch, t0, dur, type, gRoot, gOther) { ch.forEach((f, i) => { const o = note(f, t0, dur, type, i === 0 ? gRoot : gOther, padLP); o.detune.value = i % 2 ? 7 : -7; }); }
@@ -151,7 +160,7 @@ export function setCrickets(on) { ensure(); st.crickets = on; if (ctx) cricketG.
 export function setCrackle(on) { ensure(); st.crackle = on; ping(); }
 export function setMaster(v) { st.master = v; if (ctx && !st.muted) master.gain.setTargetAtTime(v, now(), 0.1); }
 export function setMuted(m) { st.muted = m; if (ctx) master.gain.setTargetAtTime(m ? 0 : st.master, now(), 0.1); ping(); }
-export function setFan(l) { ensure(); if (ctx) { fanG.gain.setTargetAtTime([0, 0.035, 0.06][l], now(), 0.6); fanLfo.frequency.setTargetAtTime([0.5, 3, 6.5][l], now(), 0.5); } }
+export function setFan(l) { ensure(); if (ctx) { fanG.gain.setTargetAtTime([0, 0.05, 0.09][l], now(), 0.6); fanLfo.frequency.setTargetAtTime([0.5, 3, 6.5][l], now(), 0.5); } }
 export function setSleep(min) {
   clearTimeout(sleepT); sleepEnd = 0;
   if (min > 0) {

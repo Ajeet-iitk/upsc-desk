@@ -27,6 +27,10 @@
 |---|---|
 | ![Fan](screenshots/fan.png) | ![Drawer](screenshots/drawer.png) |
 
+| 🪑 Sitting at the desk (your hands) | 🧶 Persian rug | 📌 Pinned sticky note |
+|---|---|---|
+| ![Sitting](screenshots/sit.png) | ![Rug](screenshots/rug.png) | ![Sticky note](screenshots/stickynote.png) |
+
 | 👁 First-person view | 📱 Mobile |
 |---|---|
 | ![First person](screenshots/firstperson.png) | <img src="screenshots/mobile.png" width="220" alt="Mobile view"> |
@@ -35,7 +39,7 @@
 
 **Look around**
 - **Drag the wall** to look around. **Zoom** with `+` / `−`, the mouse wheel, or pinch on a phone.
-- **First-person mode** (the 👁 button): stand at the desk and look around the whole room, including the roller chair, the bookshelf and the door.
+- **First-person mode** (the 👁 button): stand at the desk and look around the whole room, including the roller chair, the rug and the bookshelf.
 
 **The desk**
 - **Laptop** – zoom into a small web OS: Chrome-style search (Wikipedia API), auto-saved Notes, syllabus tracker.
@@ -46,11 +50,15 @@
 
 **Weather, fan and drawer**
 - **Weather** (the 🌦 button, or Settings): Auto, Clear, Rain, Storm, Fog. Rain drops cling to the window glass and slide down leaving trails, storms bring lightning flashes with delayed thunder, and **fog rolls in at dawn** by itself. Skies darken and the room light dims under cloud.
-- **Ceiling fan**: look up in first-person view. Click it for Off / Low / High. It spins, hums, and makes the curtains sway more.
+- **Ceiling fan**: look up in first-person view. Click it for Off / Low / High. It spins, hums, makes the curtains wave, **turns the newspaper pages** and sets the top menu ribbons swinging harder.
 - **Desk drawer**: click the drawer in the desk front. It slides out with **3 random surprise items** (chocolate, rubber duck, mystery key, coins, a note card, stress ball, USB drive). Click them for a reaction, or drag them out onto the desk.
 
+**Sit on the chair**
+- Click the chair (or the 🪑 button) to **sit down**. The camera moves to eye level and **your own hands and forearms** appear on the desk: the right hand follows the mouse and grips whatever you drag, the left rests by the keyboard. Drag to look around, `Esc` to stand up.
+
 **Whiteboard, music and settings**
-- **Whiteboard** (left of the desk): a hand-drawn UPSC roadmap with topics, doodles, sticky notes and paper clips. Click it to open a big view and **draw on it** with markers (colours, size, eraser, save as PNG). Your drawing is remembered.
+- **Whiteboard** (left of the desk): a hand-drawn UPSC roadmap with topics, doodles, sticky notes and paper clips. Click it to open a big view and **draw on it** with markers (colours, size, eraser, save as PNG). **Clear board** gives you a blank slate, **Restore art** brings the roadmap back.
+- **Pin a sticky note**: write by hand (or type a short message that is rendered in a handwriting font), pick the paper and ink, and pin it. See *Shared sticky notes* below for making notes visible to every visitor.
 - **Music controller**: 5 generated styles (Lo-fi chill, Soft piano, Dreamy ambient, Raga Yaman, Deep focus), previous / next, a live visualizer, volume, tempo, echo and warmth, plus ambience layers (rain, wind, crickets, fireplace) and a sleep timer.
 - **Settings**: change the colour of the **walls, desk, floor and curtains** (presets or any colour), curtain sheerness, auto-hide menus, low-graphics mode and master volume. Saved in your browser.
 
@@ -60,7 +68,7 @@
 - **Curtains** – drag them sideways to slide, they wave in the breeze.
 - **Window** – opens for fresh air (wind sound, swaying curtains). Click the sky for fireworks, click the sun or moon to jump the time. Traffic and birds move outside.
 - **Morning birds** – open the window and birds fly in, perch on the sill and sing. Click one and it flies off.
-- **Roller chair** – click it to spin and roll. **Door** behind the desk – click to swing it open.
+- **Roller chair** – click it to sit (or use Explore to spin it). A small **Persian rug** lies under it.
 - **Lo-fi music and rain** are generated live with WebAudio, so there are no audio files.
 
 **Interface**
@@ -82,6 +90,7 @@ js/os.js        laptop OS (search, notes, syllabus)
 js/audio.js     generated music styles, ambience, birdsong, effects
 js/musicpanel.js music controller panel
 js/board.js     whiteboard art + drawing
+js/config.js    shared sticky-note board settings
 js/books.js     book notes
 js/i18n.js      UI strings (the site is English-only)
 dist/app.js     built bundle (what index.html loads)
@@ -93,6 +102,30 @@ dist/app.js     built bundle (what index.html loads)
 npm install
 npm run build
 ```
+
+## 📌 Shared sticky notes (make them visible to everyone, forever)
+
+GitHub Pages is static, so by default pinned notes are saved **in the visitor's own browser**. To let every visitor see each other's notes, connect a free Firebase Realtime Database (about 2 minutes):
+
+1. Go to https://console.firebase.google.com, **Add project** (you can switch Analytics off).
+2. **Build → Realtime Database → Create database** (any region, start in locked mode).
+3. Open the **Rules** tab, paste this, and **Publish**. It lets anyone *add* a small JPEG note but never edit or delete one:
+```json
+{
+  "rules": {
+    "notes": {
+      ".read": true,
+      "$id": {
+        ".write": "!data.exists()",
+        ".validate": "newData.hasChildren(['img','x','y','rot','t']) && newData.child('img').isString() && newData.child('img').val().length < 40000 && newData.child('img').val().beginsWith('data:image/jpeg;base64,') && newData.child('x').isNumber() && newData.child('y').isNumber()"
+      }
+    }
+  }
+}
+```
+4. Copy the database URL (looks like `https://your-project-default-rtdb.firebaseio.com`) into `js/config.js` as `NOTES_API`, then run `npm run build` and push.
+
+Because anyone can post, a stranger could post something unwelcome. Remove a note any time in the Firebase console (Realtime Database → Data → `notes`). The page shows only the newest 80 notes and allows one note per device every 20 seconds.
 
 ## 💡 Ideas for later
 

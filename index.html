@@ -43,6 +43,7 @@
   <button class="pill round" id="winBtn" title="Window">🪟</button>
   <button class="pill round" id="wxBtn" title="Weather: Auto">🌦</button>
   <button class="pill round" id="fpBtn" title="First person view">👁</button>
+  <button class="pill round" id="sitBtn" title="Sit on the chair">🪑</button>
   <div class="pill zoom"><button id="zOut" aria-label="Zoom out">−</button><span id="zLbl">100%</span><button id="zIn" aria-label="Zoom in">+</button></div>
   <div class="pill music musicgrp" id="music">
     <button id="mPlay" class="vinyl" aria-label="Play or pause music">▶</button>
@@ -141,7 +142,20 @@
   <div class="board-wrap"><button class="x" data-close="board">✕</button><h3>Whiteboard</h3><div id="boardHost"></div>
     <div class="board-tools" id="boardTools">
       <button data-col="#1d4ed8" aria-label="Blue"></button><button data-col="#dc2626" aria-label="Red"></button><button data-col="#16a34a" aria-label="Green"></button><button data-col="#111827" aria-label="Black"></button><button data-col="#ea580c" aria-label="Orange"></button><button data-col="#7c3aed" aria-label="Purple"></button>
-      <input id="bSize" type="range" min="2" max="16" value="5" aria-label="Marker size"><button id="bErase" class="tl">Eraser</button><button id="bReset" class="tl">Reset</button><button id="bSave" class="tl">Save PNG</button>
+      <input id="bSize" type="range" min="2" max="16" value="5" aria-label="Marker size"><button id="bErase" class="tl">Eraser</button><button id="bReset" class="tl" title="Wipe the whole board">Clear board</button><button id="bRestore" class="tl">Restore art</button><button id="bPin" class="tl pin">📌 Pin a sticky note</button><button id="bSave" class="tl">Save PNG</button>
+    </div>
+    <div class="note-ed" id="noteEd">
+      <div class="ne-top"><b>New sticky note</b><span id="neHint"></span></div>
+      <div class="ne-body">
+        <canvas id="neC" width="260" height="190" aria-label="Sticky note: draw with your mouse or finger"></canvas>
+        <div class="ne-side">
+          <div class="ne-row"><span>Paper</span><div class="ne-cols" id="neCols"></div></div>
+          <div class="ne-row"><span>Ink</span><div class="ne-cols" id="nePens"></div></div>
+          <div class="ne-row"><span>Pen size</span><input type="range" id="neSize" min="2" max="9" value="3"></div>
+          <div class="ne-row"><input type="text" id="neText" maxlength="60" placeholder="or type a short message"><button id="neType" class="tl">Write it</button></div>
+          <div class="ne-btns"><button id="neClear" class="tl">Clear</button><button id="nePost" class="tl go">Pin it 📌</button></div>
+        </div>
+      </div>
     </div></div>
 </div>
 
